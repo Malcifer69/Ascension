@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Finance</title>
+<!--
+  FINANCE — three pages, one bottom tab bar: Net worth (accounts + stocks →
+  the trend), Stocks (holdings, live-priced via Finnhub), Subscriptions
+  (monthly burn). Each page carries its own base inputs; the mentor builds the
+  rest.
+
+  Sealed: no network. Saves through window.Vitality. Stock prices via the host
+  bridge: window.Vitality.stock(symbol) (server-routed Finnhub key; manual works
+  keyless). Store: { accounts:[{id,name,balance}], holdings:[{id,symbol,shares,price}],
+  subs:[{id,name,amount}], history:[{t,value}] }
+-->
+<style>
+  :root{
+    --bg:#050506;--fg:#ededf0;--brand:#6EE7B7;
+    --muted:#84848c;--muted-strong:#a8a8b0;--border:#1d1d22;
+    --neg:#ff8b8b;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --serif:Georgia,'Times New Roman',serif;
+    --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);display:flex;justify-content:center;padding:40px 20px;-webkit-font-smoothing:antialiased;position:relative}
+  body::before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;background:
+    radial-gradient(58% 44% at 50% -6%, rgba(110,231,183,.13), transparent 62%),
+    radial-gradient(1.5px 1.5px at 14% 16%, rgba(255,255,255,.5), transparent 100%),
+    radial-gradient(1px 1px at 76% 10%, rgba(255,255,255,.4), transparent 100%),
+    radial-gradient(1.5px 1.5px at 52% 6%, rgba(255,255,255,.32), transparent 100%),
+    radial-gradient(1px 1px at 30% 28%, rgba(255,255,255,.28), transparent 100%)}
+  body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:32vh;z-index:-1;pointer-events:none;background:
+    linear-gradient(to top, rgba(8,19,14,.85), transparent 80%),
+    linear-gradient(115deg, transparent 42%, rgba(13,26,23,.75) 43%, rgba(13,26,23,.75) 58%, transparent 59%),
+    linear-gradient(245deg, transparent 38%, rgba(10,18,16,.9) 39%, rgba(10,18,16,.9) 62%, transparent 63%);
+    -webkit-mask-image:linear-gradient(to top,#000 55%,transparent);mask-image:linear-gradient(to top,#000 55%,transparent)}
+  .shell{width:100%;max-width:560px}
+  h1{font-size:24px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:6px 0 0}
+  .well{margin-top:34px;text-align:center}
+  .kick{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--brand)}
+  .worth{font-family:var(--serif);font-style:italic;font-size:clamp(48px,10.5vw,74px);line-height:1;color:#fff;margin-top:12px;text-shadow:0 0 44px rgba(110,231,183,.22)}
+  .worth.neg{color:var(--neg);text-shadow:0 0 44px rgba(255,139,139,.18)}
+  .worth .u{font-size:.34em;font-style:normal;color:var(--muted);margin-left:2px}
+  .delta{font-family:var(--mono);font-size:11px;letter-spacing:.14em;margin-top:10px;color:var(--muted)}
+  .delta b{color:var(--brand);font-weight:600}
+  .delta b.down{color:var(--neg)}
+  .gwrap{margin-top:28px}
+  .gEmpty{padding:22px 0;color:var(--muted);font-size:12.5px;text-align:center}
+  .gEmpty b{color:var(--brand);font-weight:600}
+  .list{margin-top:26px;text-align:left;max-width:470px;margin-left:auto;margin-right:auto}
+  .row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;border:1px solid var(--border);background:rgba(14,14,17,.5);margin-bottom:8px;animation:up .4s var(--ease) both}
+  @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .row .nmwrap{min-width:0}
+  .row .nm{font-size:14px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .hsub{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--muted);margin-top:1px}
+  .row .bal{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--muted-strong);padding:3px 7px;border-radius:6px;transition:background .12s,color .12s}
+  .row .bal:hover{background:rgba(110,231,183,.09);color:var(--brand)}
+  .row .bal.neg{color:var(--neg)}
+  .row .del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;opacity:.45;padding:2px 4px;transition:opacity .12s,color .12s}
+  .row .del:hover{opacity:1;color:var(--neg)}
+  .balIn{width:118px;background:rgba(0,0,0,.45);border:1px solid var(--brand);border-radius:6px;padding:4px 8px;color:var(--fg);font-family:var(--mono);font-size:14px;text-align:right;outline:none}
+  .addRow{display:grid;grid-template-columns:1fr 122px auto;gap:8px;margin-top:2px}
+  .addRow.stock{grid-template-columns:1fr 100px auto}
+  .addRow input{background:rgba(14,14,17,.7);border:1px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--fg);font:inherit;outline:none;min-width:0}
+  .addRow input:focus{border-color:var(--brand)}
+  .addRow button{border:none;background:var(--brand);color:#04140d;font-weight:700;border-radius:10px;padding:0 17px;cursor:pointer}
+  .addBtn{margin-top:4px;background:transparent;border:1px dashed var(--border);border-radius:10px;color:var(--muted);font:inherit;font-size:12.5px;padding:10px 14px;cursor:pointer;width:100%;transition:color .14s,border-color .14s}
+  .addBtn:hover{color:var(--brand);border-color:var(--brand);border-style:solid}
+  .keyNote{font-family:var(--mono);font-size:10px;letter-spacing:.02em;color:var(--muted);margin-top:12px;text-align:center}
+  .keyNote b{color:var(--brand)}
+  /* the bottom tab bar — each button is a page */
+  .tabBar{display:flex;gap:6px;margin-top:30px;padding-top:18px;border-top:1px solid var(--border)}
+  .tab{flex:1;padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s}
+  .tab:hover{color:#fff;border-color:var(--muted)}
+  .tab.on{color:#04140d;background:var(--brand);border-color:var(--brand)}
+  .starterTag{width:max-content;max-width:92%;margin:0 auto 20px;padding:6px 14px;border:1px solid rgba(110,231,183,.25);border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#84848c;text-align:center}
+  .starterTag,.starterTag *{line-height:1.6}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="starterTag">✦ starter — the value is what you build · the videos show how</div>
+  <h1>Finance</h1>
+  <div class="well" id="app"></div>
+</div>
+<script>
+let store={};let view='networth';
+let editingId=null;let editKind='bal';let adding=false;let addingStock=false;let addingSub=false;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fetchingS=new Set();let finNote=false;
+function persist(){window.Vitality.save(store)}
+function accts(){if(!Array.isArray(store.accounts))store.accounts=[];return store.accounts}
+function holds(){if(!Array.isArray(store.holdings))store.holdings=[];return store.holdings}
+function subs(){if(!Array.isArray(store.subs))store.subs=[];return store.subs}
+function hist(){if(!Array.isArray(store.history))store.history=[];return store.history}
+function holdValue(h){return (typeof h.shares==='number'?h.shares:0)*(typeof h.price==='number'?h.price:0)}
+function stockTotal(){return holds().reduce((s,h)=>s+holdValue(h),0)}
+function monthlyBurn(){return subs().reduce((s,x)=>s+(typeof x.amount==='number'?x.amount:0),0)}
+function netWorth(){let s=0;for(const a of accts())s+=(typeof a.balance==='number'?a.balance:0);for(const h of holds())s+=holdValue(h);return s;}
+function fmtMoney(n){if(n==null)return '—';const sign=n<0?'−':'';const a=Math.abs(n);
+  return sign+'$'+(a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e4?Math.round(a).toLocaleString():a.toLocaleString(undefined,{maximumFractionDigits:0}));}
+
+function snapshot(){
+  const v=netWorth(),h=hist(),now=Date.now(),prev=h[h.length-1];
+  if(prev&&prev.value===v)return;
+  if(prev&&now-prev.t<120000){prev.t=now;prev.value=v;}
+  else h.push({t:now,value:v});
+}
+
+async function refreshStock(h){
+  const V=window.Vitality||{};
+  if(!h.symbol||!V.stock)return;
+  if(fetchingS.has(h.id))return;
+  fetchingS.add(h.id);render();
+  try{const price=await V.stock(h.symbol);if(typeof price==='number'&&price>0){h.price=price;snapshot();persist();}}
+  catch(e){if(String(e&&e.message||'')==='no_key')finNote=true;}
+  finally{fetchingS.delete(h.id);render();}
+}
+
+function graph(){
+  const h=hist().filter(s=>typeof s.value==='number');
+  if(h.length<2)return '<div class="gEmpty">add accounts or stocks and the <b>net-worth line draws itself</b> over time</div>';
+  const W=560,H=120,P=8;
+  const t0=h[0].t,t1=h[h.length-1].t||t0+1;
+  const lo=Math.min(...h.map(s=>s.value)),hi=Math.max(...h.map(s=>s.value));
+  const x=t=>P+((t-t0)/Math.max(1,t1-t0))*(W-2*P);
+  const y=v=>hi===lo?H/2:P+(1-(v-lo)/(hi-lo))*(H-2*P);
+  const pts=h.map(s=>[x(s.t),y(s.value)]);
+  let d='M '+pts[0][0]+' '+pts[0][1];
+  for(let i=0;i<pts.length-1;i++){const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    d+=' C '+(p1[0]+(p2[0]-p0[0])/6)+' '+(p1[1]+(p2[1]-p0[1])/6)+', '+(p2[0]-(p3[0]-p1[0])/6)+' '+(p2[1]-(p3[1]-p1[1])/6)+', '+p2[0]+' '+p2[1];}
+  const area=d+' L '+pts[pts.length-1][0]+' '+(H-P)+' L '+pts[0][0]+' '+(H-P)+' Z';
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block" preserveAspectRatio="none">'
+    +'<defs><linearGradient id="fg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6EE7B7" stop-opacity=".26"/><stop offset="100%" stop-color="#6EE7B7" stop-opacity="0"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#fg1)"/><path d="'+d+'" fill="none" stroke="#6EE7B7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<circle cx="'+pts[pts.length-1][0]+'" cy="'+pts[pts.length-1][1]+'" r="4" fill="#6EE7B7"/></svg>';
+}
+
+/* one row's editable value cell (inline input when this id is being edited) */
+function valCell(id,kind,val,neg){
+  if(editingId===id)return '<input class="balIn" id="editIn" type="text" inputmode="decimal" value="'+(val===''?'':val)+'" autocomplete="off"/>';
+  return '<span class="bal'+(neg?' neg':'')+'" data-'+kind+'="'+id+'" title="Tap to edit">';
+}
+
+function listAccounts(){
+  let h='';
+  for(const ac of accts()){
+    const neg=typeof ac.balance==='number'&&ac.balance<0;
+    h+='<div class="row"><div class="nmwrap"><span class="nm">'+esc(ac.name)+'</span></div>'
+      +valCell(ac.id,'bal',(typeof ac.balance==='number'?ac.balance:''),neg)+(editingId===ac.id?'':fmtMoney(typeof ac.balance==='number'?ac.balance:0)+'</span>')
+      +'<button class="del" data-del="'+ac.id+'" title="Remove">&times;</button></div>';
+  }
+  if(adding)h+='<div class="addRow"><input id="nmIn" placeholder="account name" autocomplete="off"/><input id="amtIn" type="text" inputmode="decimal" placeholder="balance" autocomplete="off"/><button data-add>Add</button></div>';
+  else h+='<button class="addBtn" data-addtoggle>+ Add account</button>';
+  return h;
+}
+function listStocks(){
+  let h='';
+  for(const hd of holds()){
+    const px=typeof hd.price==='number'?hd.price:null;
+    const sub=(typeof hd.shares==='number'?hd.shares:0)+' sh'+(px!=null?' @ '+fmtMoney(px):' · '+(fetchingS.has(hd.id)?'pricing…':'add a key to price'));
+    h+='<div class="row"><div class="nmwrap"><span class="nm">'+esc(hd.symbol)+'</span><div class="hsub">'+sub+'</div></div>'
+      +valCell(hd.id,'sh',(typeof hd.shares==='number'?hd.shares:''),false)+(editingId===hd.id?'':(fetchingS.has(hd.id)?'…':fmtMoney(holdValue(hd)))+'</span>')
+      +'<button class="del" data-del="'+hd.id+'" title="Remove">&times;</button></div>';
+  }
+  if(addingStock)h+='<div class="addRow stock"><input id="symIn" placeholder="ticker — e.g. AAPL" autocomplete="off"/><input id="shIn" type="text" inputmode="decimal" placeholder="shares" autocomplete="off"/><button data-addstockgo>Add</button></div>';
+  else h+='<button class="addBtn" data-addstock>+ Add stock</button>';
+  if(finNote)h+='<div class="keyNote">stocks need a free <b>Finnhub key</b> in .env.local — your mentor sets it up. Until then they hold at $0.</div>';
+  return h;
+}
+function listSubs(){
+  let h='';
+  for(const sb of subs()){
+    h+='<div class="row"><div class="nmwrap"><span class="nm">'+esc(sb.name)+'</span><div class="hsub">subscription</div></div>'
+      +valCell(sb.id,'sub',(typeof sb.amount==='number'?sb.amount:''),false)+(editingId===sb.id?'':fmtMoney(typeof sb.amount==='number'?sb.amount:0)+'/mo</span>')
+      +'<button class="del" data-del="'+sb.id+'" title="Remove">&times;</button></div>';
+  }
+  if(addingSub)h+='<div class="addRow"><input id="subNmIn" placeholder="subscription — e.g. Netflix" autocomplete="off"/><input id="subAmtIn" type="text" inputmode="decimal" placeholder="$ / month" autocomplete="off"/><button data-addsubgo>Add</button></div>';
+  else h+='<button class="addBtn" data-addsub>+ Add subscription</button>';
+  return h;
+}
+
+function tabBar(){
+  return '<div class="tabBar">'+[['networth','Net worth'],['stocks','Stocks'],['subs','Subs']]
+    .map(t=>'<button class="tab'+(view===t[0]?' on':'')+'" data-view="'+t[0]+'">'+t[1]+'</button>').join('')+'</div>';
+}
+
+function render(){
+  let html='';
+  if(view==='networth'){
+    const any=accts().length||holds().length,v=any?netWorth():null,h=hist();
+    let delta='';
+    if(h.length>=2){const d=h[h.length-1].value-h[0].value,up=d>=0;delta='<div class="delta">since day one · <b class="'+(up?'':'down')+'">'+(up?'▲ ':'▼ ')+fmtMoney(Math.abs(d)).replace('−','')+'</b></div>';}
+    html='<div class="kick">✦ net worth</div><div class="worth'+(v!=null&&v<0?' neg':'')+'">'+fmtMoney(v)+'</div>'+delta
+      +'<div class="gwrap">'+graph()+'</div><div class="list">'+listAccounts()+'</div>';
+  }else if(view==='stocks'){
+    html='<div class="kick">✦ holdings</div><div class="worth">'+(holds().length?fmtMoney(stockTotal()):'—')+'</div>'
+      +(holds().length?'<div class="delta">'+holds().length+' position'+(holds().length===1?'':'s')+' · live-priced</div>':'')
+      +'<div class="list" style="margin-top:24px">'+listStocks()+'</div>';
+  }else{
+    html='<div class="kick">✦ monthly burn</div><div class="worth">'+(subs().length?fmtMoney(monthlyBurn())+'<span class="u">/mo</span>':'—')+'</div>'
+      +(subs().length?'<div class="delta">'+subs().length+' renewal'+(subs().length===1?'':'s')+' a month</div>':'')
+      +'<div class="list" style="margin-top:24px">'+listSubs()+'</div>';
+  }
+  html+=tabBar();
+  document.getElementById('app').innerHTML=html;
+  if(editingId){const i=document.getElementById('editIn');if(i){i.focus();try{i.select();}catch(e){}
+    i.addEventListener('keydown',e=>{if(e.key==='Enter')commit();else if(e.key==='Escape'){editingId=null;render();}});
+    i.addEventListener('blur',commit);}}
+  if(adding){const n=document.getElementById('nmIn');if(n)n.focus();const amt=document.getElementById('amtIn');if(amt)amt.addEventListener('keydown',e=>{if(e.key==='Enter')addAccount()});}
+  if(addingStock){const s=document.getElementById('symIn');if(s)s.focus();const sh=document.getElementById('shIn');if(sh)sh.addEventListener('keydown',e=>{if(e.key==='Enter')addStock()});}
+  if(addingSub){const n=document.getElementById('subNmIn');if(n)n.focus();const amt=document.getElementById('subAmtIn');if(amt)amt.addEventListener('keydown',e=>{if(e.key==='Enter')addSub()});}
+}
+
+function commit(){
+  const i=document.getElementById('editIn');if(!i||!editingId)return;
+  const raw=String(i.value).replace(/[$,\s]/g,'');const n=Number(raw);
+  if(editKind==='sh'){
+    const hd=holds().find(x=>x.id===editingId);editingId=null;
+    if(hd&&raw!==''&&isFinite(n)&&n>=0){hd.shares=n;snapshot();persist();render();refreshStock(hd);return;}
+  }else if(editKind==='sub'){
+    const sb=subs().find(x=>x.id===editingId);if(sb&&raw!==''&&isFinite(n)&&n>=0){sb.amount=n;persist();}
+  }else{
+    const ac=accts().find(x=>x.id===editingId);if(ac&&raw!==''&&isFinite(n)){ac.balance=n;snapshot();persist();}
+  }
+  editingId=null;render();
+}
+function addAccount(){
+  const n=document.getElementById('nmIn'),amt=document.getElementById('amtIn');
+  const name=(n?n.value:'').trim();if(!name){if(n)n.focus();return;}
+  const raw=String(amt?amt.value:'').replace(/[$,\s]/g,'');const bal=Number(raw);
+  accts().push({id:'a'+Math.random().toString(36).slice(2,8),name,balance:(raw!==''&&isFinite(bal))?bal:0});
+  adding=false;snapshot();persist();render();
+}
+function addStock(){
+  const s=document.getElementById('symIn'),sh=document.getElementById('shIn');
+  const symbol=(s?s.value:'').trim().toUpperCase();if(!symbol){if(s)s.focus();return;}
+  const raw=String(sh?sh.value:'').replace(/[,\s]/g,'');const shares=Number(raw);
+  const hd={id:'h'+Math.random().toString(36).slice(2,8),symbol,shares:(raw!==''&&isFinite(shares))?shares:0,price:null};
+  holds().push(hd);addingStock=false;persist();render();refreshStock(hd);
+}
+function addSub(){
+  const n=document.getElementById('subNmIn'),amt=document.getElementById('subAmtIn');
+  const name=(n?n.value:'').trim();if(!name){if(n)n.focus();return;}
+  const raw=String(amt?amt.value:'').replace(/[$,\s]/g,'');const amount=Number(raw);
+  subs().push({id:'s'+Math.random().toString(36).slice(2,8),name,amount:(raw!==''&&isFinite(amount))?amount:0});
+  addingSub=false;persist();render();
+}
+
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('[data-view]');
+  if(tab){view=tab.getAttribute('data-view');editingId=null;adding=addingStock=addingSub=false;render();return}
+  const b=e.target.closest('[data-bal]');
+  if(b){editingId=b.getAttribute('data-bal');editKind='bal';adding=addingStock=addingSub=false;render();return}
+  const sh=e.target.closest('[data-sh]');
+  if(sh){editingId=sh.getAttribute('data-sh');editKind='sh';adding=addingStock=addingSub=false;render();return}
+  const su=e.target.closest('[data-sub]');
+  if(su){editingId=su.getAttribute('data-sub');editKind='sub';adding=addingStock=addingSub=false;render();return}
+  const d=e.target.closest('[data-del]');
+  if(d){const id=d.getAttribute('data-del');store.accounts=accts().filter(x=>x.id!==id);store.holdings=holds().filter(x=>x.id!==id);store.subs=subs().filter(x=>x.id!==id);snapshot();persist();render();return}
+  if(e.target.closest('[data-addtoggle]')){adding=true;editingId=null;render();return}
+  if(e.target.closest('[data-addstock]')){addingStock=true;editingId=null;render();return}
+  if(e.target.closest('[data-addsub]')){addingSub=true;editingId=null;render();return}
+  if(e.target.closest('[data-add]')){addAccount();return}
+  if(e.target.closest('[data-addstockgo]')){addStock();return}
+  if(e.target.closest('[data-addsubgo]')){addSub();return}
+});
+
+/* standalone preview: opened as a raw file with no dashboard bridge? back it
+   with localStorage so it still renders. In the real sealed dashboard the
+   bridge is injected first, so this branch never runs there. */
+if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:finance',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:finance')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);},stock:function(){return Promise.reject(new Error('no_key'));}};}
+(async()=>{
+  const d=await window.Vitality.load();
+  store=(d&&typeof d==='object'&&!Array.isArray(d))?d:{};
+  if(!Array.isArray(store.accounts))store.accounts=[];
+  if(!Array.isArray(store.holdings))store.holdings=[];
+  if(!Array.isArray(store.subs))store.subs=[];
+  if(!Array.isArray(store.history))store.history=[];
+  render();
+  for(const hd of holds()){ if(!hd.symbol)continue; await refreshStock(hd); await new Promise(r=>setTimeout(r,1200)); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#050506" />
+<title>Vitals</title>
+<!--
+  VITALS — bone-simple. One recovery number, from two inputs you bring: how you
+  slept and how you feel. A WHOOP button is here for later (Episode 2 wires the
+  real connection). The 7-day line scales your inputs over time.
+
+  Sealed: no network. Saves through window.Vitality.
+  Store: { 'YYYY-MM-DD': { sleepHours, feel, whoopRecovery? } }
+  Recovery: whoopRecovery wins when a device fills it; else 0.6·feel + 0.4·sleep.
+  The SAME formula lives in peak.html (recoveryFromVitals) + docs/THE-MATH.md §5
+  + /sweep — change one, change all, so Peak never disagrees.
+-->
+<style>
+  :root{
+    --bg:#050506;--fg:#ededf0;--brand:#6EE7B7;
+    --muted:#84848c;--muted-strong:#a8a8b0;--border:#1d1d22;--border-strong:#2a2a33;
+    --good:#6EE7B7;--watch:#E8C878;--low:#ff8b8b;
+    --whoop:#00E5A0;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --serif:Georgia,'Times New Roman',serif;
+    --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);display:flex;justify-content:center;padding:40px 20px;-webkit-font-smoothing:antialiased;position:relative}
+  body::before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;background:
+    radial-gradient(58% 44% at 50% -6%, rgba(110,231,183,.13), transparent 62%),
+    radial-gradient(1.5px 1.5px at 14% 16%, rgba(255,255,255,.5), transparent 100%),
+    radial-gradient(1px 1px at 76% 10%, rgba(255,255,255,.4), transparent 100%),
+    radial-gradient(1.5px 1.5px at 52% 6%, rgba(255,255,255,.32), transparent 100%),
+    radial-gradient(1px 1px at 30% 28%, rgba(255,255,255,.28), transparent 100%)}
+  body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:32vh;z-index:-1;pointer-events:none;background:
+    linear-gradient(to top, rgba(8,19,14,.85), transparent 80%),
+    linear-gradient(115deg, transparent 42%, rgba(13,26,23,.75) 43%, rgba(13,26,23,.75) 58%, transparent 59%),
+    linear-gradient(245deg, transparent 38%, rgba(10,18,16,.9) 39%, rgba(10,18,16,.9) 62%, transparent 63%);
+    -webkit-mask-image:linear-gradient(to top,#000 55%,transparent);mask-image:linear-gradient(to top,#000 55%,transparent)}
+  .shell{width:100%;max-width:520px}
+  h1{font-size:24px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:6px 0 0}
+
+  /* recovery hero */
+  .hero{margin-top:34px;text-align:center}
+  .kick{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--brand)}
+  .rec{font-family:var(--serif);font-style:italic;font-size:clamp(66px,16vw,104px);line-height:1;color:#fff;margin-top:8px;text-shadow:0 0 44px rgba(110,231,183,.22)}
+  .rec.good{color:var(--good)} .rec.watch{color:var(--watch)} .rec.low{color:var(--low)}
+  .recLab{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+
+  /* whoop connect */
+  .whoop{margin-top:24px;display:flex;justify-content:center}
+  .whoopBtn{display:inline-flex;align-items:center;gap:10px;padding:12px 22px;border-radius:999px;border:1px solid rgba(0,229,160,.4);
+    background:linear-gradient(180deg,rgba(0,229,160,.10),rgba(0,229,160,.03));color:var(--whoop);font-weight:700;font-size:13.5px;cursor:pointer;transition:transform .15s var(--ease),box-shadow .15s;font-family:inherit}
+  .whoopBtn:hover{transform:translateY(-1px);box-shadow:0 8px 26px -10px rgba(0,229,160,.5)}
+  .whoopBtn .dot{width:8px;height:8px;border-radius:99px;background:var(--whoop);box-shadow:0 0 10px var(--whoop)}
+  .whoopNote{margin:12px auto 0;max-width:42ch;text-align:center;color:var(--muted);font-size:12px;line-height:1.55}
+  .whoopNote b{color:var(--whoop)}
+
+  /* manual check-in */
+  .card{margin-top:26px;border:1px solid var(--border);border-radius:16px;background:rgba(14,14,17,.5);padding:20px 18px}
+  .q{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted-strong);margin-bottom:12px}
+  .q2{margin-top:22px}
+  .sleepRow{display:flex;align-items:center;justify-content:center;gap:18px}
+  .step{width:44px;height:44px;border-radius:999px;border:1px solid var(--border-strong);background:transparent;color:var(--muted);font-size:22px;cursor:pointer;transition:all .15s;font-family:inherit}
+  .step:hover{color:#fff;border-color:var(--muted)}
+  .sleepVal{font-family:var(--serif);font-style:italic;font-size:34px;color:#fff;min-width:120px;text-align:center}
+  .feelRow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+  .feel{padding:12px 4px;border-radius:11px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit}
+  .feel:hover{color:#fff;border-color:var(--muted)}
+  .feel.on{color:#04140d;background:var(--brand);border-color:var(--brand)}
+  .saveBtn{margin-top:20px;width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(180deg,#8df0c9,var(--brand));color:#04140d;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 28px -10px var(--brand);transition:transform .15s}
+  .saveBtn:hover{transform:translateY(-1px)}
+  .saveBtn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
+
+  /* 7-day trend */
+  .trend{margin-top:26px}
+  .trendHd{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .tEmpty{padding:20px 0;text-align:center;color:var(--muted);font-size:12px}
+  .foot{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:24px;text-align:center}
+  .starterTag{width:max-content;max-width:92%;margin:0 auto 20px;padding:6px 14px;border:1px solid rgba(110,231,183,.25);border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#84848c;text-align:center}
+  .starterTag,.starterTag *{line-height:1.6}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="starterTag">✦ starter — the value is what you build · the videos show how</div>
+  <h1>Vitals</h1>
+  <div id="app"></div>
+</div>
+<script>
+const FEEL=[['Wrecked',25],['Rough',45],['OK',65],['Good',82],['Great',95]];
+let store={};
+let draft={sleepHours:7.5,feel:null};
+function persist(){window.Vitality.save(store)}
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+
+/* THE shared recovery formula — identical to peak.html recoveryFromVitals,
+   docs/THE-MATH.md §5 and /sweep. whoopRecovery (a device) wins; else the two
+   manual inputs. Change here → change all. */
+function estRecovery(h){
+  if(!h) return null;
+  if(typeof h.whoopRecovery==='number') return Math.max(1,Math.min(99,Math.round(h.whoopRecovery)));
+  const c=x=>Math.max(0,Math.min(1,x)),parts=[],w=[];
+  if(typeof h.feel==='number'){ parts.push(Math.max(0,Math.min(100,h.feel))); w.push(0.6); }
+  if(typeof h.sleepHours==='number'){ parts.push(c(h.sleepHours/8)*100); w.push(0.4); }
+  if(!parts.length) return null;
+  const sw=w.reduce((a,b)=>a+b,0); let s=0; for(let i=0;i<parts.length;i++)s+=parts[i]*w[i];
+  return Math.max(1,Math.min(99,Math.round(s/sw)));
+}
+function tone(r){ if(r==null)return ''; if(r>=67)return 'good'; if(r>=34)return 'watch'; return 'low'; }
+function fmtSleep(h){const hh=Math.floor(h),mm=Math.round((h-hh)*60);return hh+'h'+(mm?' '+mm+'m':'');}
+function todays(){return store[todayKey()]||null;}
+function entries(){return Object.keys(store).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort().map(k=>({k,r:estRecovery(store[k])})).filter(e=>e.r!=null);}
+
+function trend(){
+  const e=entries().slice(-7);
+  if(e.length<2)return ''; /* minimal: nothing until there's a line to draw */
+  const W=480,H=56,P=6;
+  const xs=(i)=>P+(i/(e.length-1))*(W-2*P), ys=(r)=>P+(1-r/100)*(H-2*P);
+  const pts=e.map((d,i)=>[xs(i),ys(d.r)]);
+  let path='M '+pts[0][0]+' '+pts[0][1];
+  for(let i=0;i<pts.length-1;i++){const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    path+=' C '+(p1[0]+(p2[0]-p0[0])/6)+' '+(p1[1]+(p2[1]-p0[1])/6)+', '+(p2[0]-(p3[0]-p1[0])/6)+' '+(p2[1]-(p3[1]-p1[1])/6)+', '+p2[0]+' '+p2[1];}
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block;opacity:.6" preserveAspectRatio="none">'
+    +'<path d="'+path+'" fill="none" stroke="#6EE7B7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function render(){
+  const t=todays(),rec=estRecovery(t),tn=tone(rec);
+  const line=trend();
+  document.getElementById('app').innerHTML=
+    '<div class="hero"><div class="rec '+tn+'">'+(rec!=null?rec+'%':'—')+'</div></div>'
+    +'<div class="whoop"><button class="whoopBtn" data-whoop><span class="dot"></span>Connect WHOOP</button></div>'
+    +'<div class="card">'
+      +'<div class="sleepRow"><button class="step" data-sleep="-0.5">−</button><span class="sleepVal">'+fmtSleep(draft.sleepHours)+'</span><button class="step" data-sleep="0.5">+</button></div>'
+      +'<div class="feelRow" style="margin-top:20px">'+FEEL.map((f)=>'<button class="feel'+(draft.feel===f[1]?' on':'')+'" data-feel="'+f[1]+'">'+f[0]+'</button>').join('')+'</div>'
+      +'<button class="saveBtn" data-save '+(draft.feel==null?'disabled':'')+' aria-label="Save">✓</button>'
+    +'</div>'
+    +(line?'<div class="trend">'+line+'</div>':'');
+}
+
+document.addEventListener('click',e=>{
+  const s=e.target.closest('[data-sleep]');
+  if(s){draft.sleepHours=Math.max(0,Math.min(14,draft.sleepHours+parseFloat(s.getAttribute('data-sleep'))));render();return}
+  const f=e.target.closest('[data-feel]');
+  if(f){draft.feel=Number(f.getAttribute('data-feel'));render();return}
+  if(e.target.closest('[data-save]')){
+    if(draft.feel==null)return;
+    const k=todayKey(),prev=store[k]||{};
+    store[k]=Object.assign({},prev,{sleepHours:draft.sleepHours,feel:draft.feel});
+    persist();render();
+  }
+});
+
+if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:vitals',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:vitals')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);}};}
+(async()=>{
+  const d=await window.Vitality.load();
+  store=(d&&typeof d==='object'&&!Array.isArray(d))?d:{};
+  const t=todays();
+  if(t){ if(typeof t.sleepHours==='number')draft.sleepHours=t.sleepHours; if(typeof t.feel==='number')draft.feel=t.feel; }
+  render();
+})();
+</script>
+</body>
+</html>

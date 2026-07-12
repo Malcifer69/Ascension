@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#050506" />
+<title>Brand</title>
+<!--
+  BRAND — bare minimum, built to be built on.
+  One screen: CONNECT buttons. Connected: a graph. That's the whole tile.
+
+  Sealed tile — it can't reach the network itself. TWO ways data lands:
+   • TikTok: LIVE, zero setup. window.Vitality.tiktok(handle) asks the host
+     to fetch the public keyless endpoint (tikwm) and returns the follower
+     count. Pulled on connect + on load. No API key, no /sweep, no backend.
+   • Everything else (YouTube, IG, X): the mentor files snapshots on its
+     rounds (/sweep → save_data), or tap a count to log it by hand any time.
+
+  Store: { accounts:[{id,platform,handle,history:[{t,count}]}] }
+  (append-only {t,count} snapshots; everything renders from history.)
+-->
+<style>
+  :root{
+    --bg:#050506;--surface:#0e0e11;--fg:#ededf0;
+    --brand:#6EE7B7;--brand-soft:rgba(110,231,183,.08);
+    --muted:#84848c;--muted-strong:#a8a8b0;
+    --border:#1d1d22;--border-strong:#2a2a33;
+    --radius:14px;--pill:999px;
+    --ease:cubic-bezier(.16,1,.3,1);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);display:flex;justify-content:center;padding:40px 20px;-webkit-font-smoothing:antialiased}
+  .shell{width:100%;max-width:620px}
+  h1{font-size:24px;font-weight:600;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:6px 0 0}
+
+  /* connect row — the whole empty state */
+  .connect{margin-top:26px;display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .cbtn{display:flex;align-items:center;justify-content:center;gap:9px;padding:13px 12px;border-radius:var(--pill);
+    border:1px solid rgba(255,255,255,.14);font-weight:700;font-size:13.5px;
+    cursor:pointer;transition:transform .18s var(--ease),box-shadow .18s;font-family:inherit}
+  .cbtn:hover{transform:translateY(-1px);box-shadow:0 6px 22px -8px var(--pc,var(--brand))}
+  .lg{display:inline-flex;width:17px;height:17px;flex:none}
+  .lg svg{width:100%;height:100%}
+  .hint{margin-top:18px;color:var(--muted);font-size:12.5px;text-align:center}
+
+  /* handle input, inline */
+  .ask{margin-top:22px;display:flex;gap:8px}
+  .ask input{flex:1;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--pill);
+    padding:11px 16px;color:var(--fg);font:inherit;outline:none}
+  .ask input:focus{border-color:var(--brand)}
+  .ask button{padding:11px 20px;border-radius:var(--pill);border:none;background:var(--brand);color:#04140d;font-weight:700;cursor:pointer}
+
+  /* connected: account card = header row + THE GRAPH */
+  .acct{margin-top:18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:16px 16px 8px;animation:up .5s var(--ease) both}
+  @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+  .aHead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .aChip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-strong)}
+  .aChip .dot{width:8px;height:8px;border-radius:99px;background:var(--pc,var(--brand))}
+  .aCount{margin-left:auto;font-family:var(--serif);font-style:italic;font-size:30px;line-height:1;color:var(--fg);cursor:pointer}
+  .aCount:hover{color:var(--brand)}
+  .aUnit{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .aX{border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;opacity:.5}
+  .aX:hover{opacity:1;color:#ff6b6b}
+  .gwrap{margin-top:8px}
+  .gEmpty{padding:26px 0 30px;text-align:center;color:var(--muted);font-size:12.5px}
+  .gEmpty b{color:var(--brand);font-weight:600}
+  .starterTag{width:max-content;max-width:92%;margin:0 auto 20px;padding:6px 14px;border:1px solid rgba(110,231,183,.25);border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:#84848c;text-align:center}
+  .starterTag,.starterTag *{line-height:1.6}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="starterTag">✦ starter — the value is what you build · the videos show how</div>
+  <h1>Brand</h1>
+  <p class="sub">Connect a social &middot; watch it grow</p>
+  <div id="app"></div>
+</div>
+
+<script>
+/* ── platforms (add more = one line each) ── */
+/* real logos inline (sealed tile — no external assets), OneUp-style fills */
+const LOGOS={
+  tiktok:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>',
+  instagram:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5.2"/><circle cx="12" cy="12" r="4.4"/><circle cx="17.4" cy="6.6" r="1.15" fill="currentColor" stroke="none"/></svg>',
+  youtube:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.11-2.12C19.51 3.55 12 3.55 12 3.55s-7.51 0-9.39.53A3 3 0 0 0 .5 6.2 31.3 31.3 0 0 0 0 12a31.3 31.3 0 0 0 .5 5.8 3 3 0 0 0 2.11 2.12c1.88.53 9.39.53 9.39.53s7.51 0 9.39-.53a3 3 0 0 0 2.11-2.12A31.3 31.3 0 0 0 24 12a31.3 31.3 0 0 0-.5-5.8zM9.6 15.6V8.4L15.83 12 9.6 15.6z"/></svg>',
+  x:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.59-6.64 7.59H.46l8.6-9.83L0 1.15h7.59l5.24 6.93 6.07-6.93z"/></svg>',
+};
+const PLATFORMS={
+  tiktok:{label:'TikTok',color:'#25F4EE',unit:'followers',btn:'#161823',ink:'#fff'},
+  instagram:{label:'Instagram',color:'#E1306C',unit:'followers',btn:'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',ink:'#fff'},
+  youtube:{label:'YouTube',color:'#FF0033',unit:'subs',btn:'#FF0000',ink:'#fff'},
+  x:{label:'X',color:'#e7e9ea',unit:'followers',btn:'#000',ink:'#fff'},
+};
+
+let state={accounts:[]};
+let asking=null; /* platform id while typing a handle */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function save(){window.Vitality.save(state)}
+function fmt(n){if(n==null)return '—';if(n>=1e6)return (n/1e6).toFixed(n>=1e7?0:1)+'M';if(n>=1e4)return Math.round(n/1e3)+'K';return n.toLocaleString()}
+function last(a){const h=a.history||[];for(let i=h.length-1;i>=0;i--)if(typeof h[i].count==='number')return h[i].count;return null}
+
+const fetching=new Set(); /* account ids mid-refresh → the … loading state */
+const noteById={};        /* transient per-account status (e.g. 'key' = add a key) */
+/* which platforms have a live lane, and how to pull them via the host bridge:
+   tiktok = keyless (tikwm); youtube = your free key (server-routed). ig/x have
+   no lane → manual tap only. */
+function liveFn(a){
+  const V=window.Vitality||{};
+  if(a.platform==='tiktok'&&V.tiktok)return function(){return V.tiktok(a.handle)};
+  if(a.platform==='youtube'&&V.youtube)return function(){return V.youtube(a.handle)};
+  return null;
+}
+/* live pull — appends one snapshot; skips if the last point is <6h old and
+   unchanged. Fails quietly (APIs hiccup; manual tap always works). YouTube with
+   no key set surfaces a 'key' note so the tile can tell the user. */
+async function refreshLive(a){
+  const fn=liveFn(a);
+  if(!fn)return;
+  if(fetching.has(a.id))return;
+  fetching.add(a.id);delete noteById[a.id];render();
+  try{
+    const count=await fn();
+    if(typeof count==='number'&&count>=0){
+      const h=(a.history=a.history||[]);
+      const prev=h[h.length-1],now=Date.now();
+      if(!(prev&&prev.count===count&&now-prev.t<6*3600e3)){h.push({t:now,count});save();}
+    }
+  }catch(e){
+    if(a.platform==='youtube'&&String(e&&e.message||'')==='no_key')noteById[a.id]='key';
+  }
+  finally{fetching.delete(a.id);render();}
+}
+/* honest empty-graph copy — never promise a pull that can't happen */
+function emptyMsg(a){
+  if((a.history||[]).length)return '<b>live count in</b> — the line draws as your following moves · tap to log by hand';
+  if(a.platform==='tiktok')return 'pulling your live count…';
+  if(a.platform==='youtube')return noteById[a.id]==='key'
+    ? 'add a free <b>YouTube API key</b> to auto-pull · or tap the number to log'
+    : 'pulling your live count…';
+  return 'tap the number to log · your mentor files the rest';
+}
+
+/* smooth area graph from history (same curve style as the Peak page) */
+function graph(a){
+  const h=(a.history||[]).filter(s=>typeof s.count==='number');
+  const pc=(PLATFORMS[a.platform]||{}).color||'#6EE7B7';
+  if(h.length<2)return '<div class="gEmpty">'+emptyMsg(a)+'</div>';
+  const W=560,H=120,P=8;
+  const t0=h[0].t,t1=h[h.length-1].t||t0+1;
+  const lo=Math.min(...h.map(s=>s.count)),hi=Math.max(...h.map(s=>s.count));
+  const x=t=>P+((t-t0)/Math.max(1,t1-t0))*(W-2*P);
+  const y=c=>hi===lo?H/2:P+(1-(c-lo)/(hi-lo))*(H-2*P);
+  const pts=h.map(s=>[x(s.t),y(s.count)]);
+  let d='M '+pts[0][0]+' '+pts[0][1];
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    d+=' C '+(p1[0]+(p2[0]-p0[0])/6)+' '+(p1[1]+(p2[1]-p0[1])/6)+', '+(p2[0]-(p3[0]-p1[0])/6)+' '+(p2[1]-(p3[1]-p1[1])/6)+', '+p2[0]+' '+p2[1];
+  }
+  const area=d+' L '+pts[pts.length-1][0]+' '+(H-P)+' L '+pts[0][0]+' '+(H-P)+' Z';
+  const gid='g'+a.id;
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block" preserveAspectRatio="none">'
+    +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+pc+'" stop-opacity=".28"/><stop offset="100%" stop-color="'+pc+'" stop-opacity="0"/></linearGradient></defs>'
+    +'<path d="'+area+'" fill="url(#'+gid+')"/>'
+    +'<path d="'+d+'" fill="none" stroke="'+pc+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<circle cx="'+pts[pts.length-1][0]+'" cy="'+pts[pts.length-1][1]+'" r="4" fill="'+pc+'"/></svg>';
+}
+
+function render(){
+  const app=$('#app');
+  const free=Object.keys(PLATFORMS).filter(p=>!state.accounts.some(a=>a.platform===p));
+  let html='';
+
+  /* the accounts — each one: chip · count · graph */
+  for(const a of state.accounts){
+    const P2=PLATFORMS[a.platform]||{label:a.platform,color:'#6EE7B7',unit:'followers'};
+    html+='<div class="acct" style="--pc:'+P2.color+'">'
+      +'<div class="aHead">'
+      +'<span class="aChip"><span class="lg" style="color:'+P2.color+'">'+(LOGOS[a.platform]||'')+'</span>'+esc(P2.label)+' · '+esc(a.handle)+'</span>'
+      +'<span class="aCount" data-log="'+a.id+'" title="Tap to log today\'s count">'+(fetching.has(a.id)?'…':fmt(last(a)))+'</span>'
+      +'<span class="aUnit">'+P2.unit+'</span>'
+      +'<button class="aX" data-del="'+a.id+'" title="Disconnect">&times;</button>'
+      +'</div><div class="gwrap">'+graph(a)+'</div></div>';
+  }
+
+  /* the connect row */
+  if(free.length){
+    html+='<div class="connect">'+free.map(p=>{
+      const P2=PLATFORMS[p];
+      return '<button class="cbtn" style="--pc:'+P2.color+';background:'+P2.btn+';color:'+P2.ink+'" data-connect="'+p+'"><span class="lg">'+LOGOS[p]+'</span>Connect '+P2.label+'</button>';
+    }).join('')+'</div>';
+    if(!state.accounts.length)html+='<p class="hint">That&rsquo;s the whole tile. Connect one — the graph does the rest.</p>';
+  }
+
+  /* the handle ask */
+  if(asking){
+    const P2=PLATFORMS[asking];
+    html+='<div class="ask"><input id="handleIn" placeholder="your '+P2.label+' handle — e.g. @you" autocomplete="off"/><button data-save-handle>Connect</button></div>';
+  }
+
+  app.innerHTML=html;
+  if(asking){const i=$('#handleIn');i.focus();i.addEventListener('keydown',e=>{if(e.key==='Enter')addAccount()})}
+}
+
+function addAccount(){
+  const i=$('#handleIn');if(!i)return;
+  const handle=i.value.trim();if(!handle)return;
+  const acct={id:'a'+Math.random().toString(36).slice(2,8),platform:asking,handle,history:[]};
+  state.accounts.push(acct);
+  asking=null;save();render();
+  refreshLive(acct); /* live pull the moment you connect (TikTok keyless · YouTube w/ key) */
+}
+
+document.addEventListener('click',e=>{
+  const c=e.target.closest('[data-connect]');
+  if(c){asking=c.getAttribute('data-connect');render();return}
+  if(e.target.closest('[data-save-handle]')){addAccount();return}
+  const d=e.target.closest('[data-del]');
+  if(d){state.accounts=state.accounts.filter(a=>a.id!==d.getAttribute('data-del'));save();render();return}
+  const l=e.target.closest('[data-log]');
+  if(l){
+    const a=state.accounts.find(x=>x.id===l.getAttribute('data-log'));if(!a)return;
+    const v=prompt('Today\'s count for '+a.handle+':',last(a)??'');
+    const n=Number(String(v).replace(/[,\s]/g,''));
+    if(v!=null&&isFinite(n)&&n>=0){(a.history=a.history||[]).push({t:Date.now(),count:Math.round(n)});save();render();}
+  }
+});
+
+/* boot — accounts carry over from the old brand tile's store untouched */
+if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:brand',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:brand')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);},tiktok:function(){return Promise.reject(new Error('na'));},youtube:function(){return Promise.reject(new Error('no_key'));}};}
+(async()=>{
+  const d=await window.Vitality.load();
+  if(d&&typeof d==='object'&&!Array.isArray(d)&&Array.isArray(d.accounts)){
+    state.accounts=d.accounts.filter(a=>a&&a.platform&&a.handle).map(a=>({id:a.id||'a'+Math.random().toString(36).slice(2,8),platform:a.platform,handle:a.handle,history:Array.isArray(a.history)?a.history:[]}));
+  }
+  render();
+  /* live-refresh on load — one at a time (APIs rate-limit ~1/sec) */
+  for(const a of state.accounts){
+    if(a.platform!=='tiktok'&&a.platform!=='youtube')continue;
+    const h=a.history||[],prev=h[h.length-1];
+    if(prev&&Date.now()-prev.t<6*3600e3)continue; /* still fresh */
+    await refreshLive(a);
+    await new Promise(r=>setTimeout(r,1200));
+  }
+})();
+</script>
+</body>
+</html>
