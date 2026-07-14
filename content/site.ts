@@ -10,5 +10,5 @@
  *             every time. /detonate undo clears it.
  */
 export const site: { name: string; detonated?: 'black' | 'ambient' } = {
-  name: '',
+  name: 'Aryan',
 }

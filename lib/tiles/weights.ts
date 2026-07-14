@@ -4,9 +4,10 @@
  *   y = the Mentor (the overseer, where the math lives)
  *   x = each input tile · w = that tile's share of the ACTIVE goal
  *
- * Each goal carries its own weights (sum ≈ 100): "famous YouTuber" leans on
- * Brand; "185 lb lean" leans on Train/Fuel. The row badges show the active
- * goal's weights; the Mentor lists every goal with its full breakdown.
+ * Each goal carries its own weights (sum ≈ 100): "jacked 17 year old
+ * millionaire" leans on Finance/Brand; "145 lb lean" leans on Train/Fuel. The
+ * row badges show the active goal's weights; the Mentor lists every goal
+ * with its full breakdown.
  *
  * WHO DOES THE MATH: Claude Code, at build time — not an Anthropic key, not
  * you by hand. In VS Code, say:
@@ -49,20 +50,20 @@ export interface Notice {
 
 export const DEFAULT_GOALS: Goal[] = [
   {
-    id: 'youtube',
-    title: 'Become a famous YouTuber',
+    id: 'millionaire',
+    title: 'Become a jacked 17 year old millionaire',
     accent: '#6EE7B7',
     // Train entered this goal when the mentor noticed workouts drive output —
-    // see DEFAULT_NOTICED. Before: brand 70 / vitals 20 / finance 10.
-    weights: { brand: 62, train: 8, vitals: 20, finance: 10 },
-    progress: 28,
+    // see DEFAULT_NOTICED. Before: finance 45 / brand 35 / vitals 20.
+    weights: { finance: 35, brand: 30, train: 20, vitals: 15 },
+    progress: 0,
   },
   {
-    id: 'lean185',
-    title: 'Be 185 lb lean',
+    id: 'lean145',
+    title: 'Be 145 lb lean',
     accent: '#8AB4FF',
-    weights: { train: 40, fuel: 30, vitals: 20, peak: 10 },
-    progress: 61,
+    weights: { train: 38, fuel: 32, vitals: 20, peak: 10 },
+    progress: 0,
   },
 ]
 
@@ -70,10 +71,10 @@ export const DEFAULT_GOALS: Goal[] = [
  *  mentor (Claude Code). Switching it on = top priority — the board goes gold. */
 export const OVERALL_GOAL: Goal = {
   id: 'overall',
-  title: 'A jacked, famous YouTuber',
+  title: 'Become a jacked 17 year old',
   accent: '#E8C878',
-  weights: { brand: 30, train: 25, vitals: 20, fuel: 13, finance: 7, peak: 5 },
-  progress: 34,
+  weights: { train: 29, finance: 17, vitals: 18, fuel: 16, brand: 15, peak: 5 },
+  progress: 0,
 }
 
 /** Overall first, then the individual goals. */
@@ -91,16 +92,18 @@ export const DEFAULT_NOTICED: Notice[] = [
   {
     id: 'n-workouts-drive',
     when: 'this morning',
-    text: 'When you skip the gym, you drink less water — and your analytics take a deep dive the same day. Workouts might be the key to your drive, not just your body. I moved Train into the YouTuber goal.',
+    text: 'When you skip the gym, you drink less water — and your output dips the same day. Workouts might be the key to your hustle, not just your body. I moved Train into the millionaire goal.',
     points: [
       'When you skip the gym, you drink **less water** the same day',
-      'No-workout days: your **analytics take a deep dive**',
-      '**Workouts might be the key to your drive** — not just your body',
-      'So I moved **Train into the YouTuber goal**',
+      'No-workout days: your **output takes a dip**',
+      '**Workouts might be the key to your hustle** — not just your body',
+      'So I moved **Train into the millionaire goal**',
     ],
     deltas: [
-      { tile: 'train', from: 0, to: 8 },
-      { tile: 'brand', from: 70, to: 62 },
+      { tile: 'train', from: 0, to: 20 },
+      { tile: 'finance', from: 45, to: 35 },
+      { tile: 'brand', from: 35, to: 30 },
+      { tile: 'vitals', from: 20, to: 15 },
     ],
   },
 ]
@@ -123,37 +126,37 @@ export interface TileIdea {
 export const DEFAULT_IDEAS: Record<string, TileIdea[]> = {
   overall: [
     {
-      word: 'Pipeline',
-      title: 'Content pipeline',
-      tracks: 'videos in flight → published, per week',
-      why: 'Your output IS the goal — but nothing tracks the machine that makes it. Brand tracks the channel; this tracks the work.',
+      word: 'Hustle',
+      title: 'Income pipeline',
+      tracks: 'side hustle + investing moves, in flight → landed',
+      why: 'Your output IS the goal — but nothing tracks the machine that makes it. Finance tracks the balance; this tracks the work.',
       estWeight: 10,
     },
     {
       word: 'Sleep',
       title: 'Sleep consistency',
       tracks: 'bedtime variance, night by night',
-      why: 'Your recovery swings track your analytics dips. Vitals sees the score — this would see the habit behind it.',
+      why: 'At 17, recovery is the multiplier on both the gym and the grind. Vitals sees the score — this would see the habit behind it.',
       estWeight: 6,
     },
   ],
-  youtube: [
+  millionaire: [
     {
-      word: 'Pipeline',
-      title: 'Content pipeline',
-      tracks: 'ideas → filmed → edited → published',
-      why: 'You track the channel (Brand) but not the machine that feeds it. Publishing cadence is the single biggest lever here.',
+      word: 'Hustle',
+      title: 'Income pipeline',
+      tracks: 'ideas → in progress → income landed',
+      why: 'You track the balance (Finance) but not the machine that feeds it. Consistent hustle hours are the single biggest lever here.',
       estWeight: 12,
     },
     {
-      word: 'Caffeine',
-      title: 'Caffeine timing',
-      tracks: 'when + how much, against publish days',
-      why: 'The data hints more caffeine on publish days — fuel or crutch? One small tile answers it.',
-      estWeight: 5,
+      word: 'Focus',
+      title: 'Deep work hours',
+      tracks: 'focused hustle time vs distraction, per day',
+      why: 'Time is the one asset compounding fastest at 17. Nothing tracks how much of it actually goes toward the goal.',
+      estWeight: 8,
     },
   ],
-  lean185: [
+  lean145: [
     {
       word: 'Water',
       title: 'Water',
@@ -165,7 +168,7 @@ export const DEFAULT_IDEAS: Record<string, TileIdea[]> = {
       word: 'Steps',
       title: 'Steps / NEAT',
       tracks: 'daily movement outside the gym',
-      why: 'At 185-lean, the deficit is won between workouts. Train sees sessions; nothing sees the other 23 hours.',
+      why: 'At 145-lean, the deficit is won between workouts. Train sees sessions; nothing sees the other 23 hours.',
       estWeight: 7,
     },
   ],

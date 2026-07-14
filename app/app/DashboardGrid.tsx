@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { CORE_TILES, VEE_TILE, DEFAULT_HOME_ORDER, coreDefaultSize, type CoreTile } from '@/lib/tiles/coreTiles'
 import dynamic from 'next/dynamic'
+import styles from './dashboard.module.css'
 import { activeGoal as readActiveGoal, allGoals, setActiveGoalId, tileWeights, type Goal } from '@/lib/tiles/weights'
 
 // Lazy: the board never pays for the mentor (Three.js gem included) until it
@@ -869,6 +870,7 @@ export default function DashboardGrid({ userId }: DashboardGridProps) {
           </div>
 
           <div
+            className={styles.tileRow}
             style={{
               display: 'flex',
               gap: 16,

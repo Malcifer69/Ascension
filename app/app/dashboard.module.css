@@ -765,3 +765,14 @@
     margin-inline: auto;
   }
 }
+
+/* The x-tile row scrolls horizontally (drag, wheel, touch all still work) —
+   this just hides the OS/browser scrollbar track so it doesn't sit under
+   the row as a bar. */
+.tileRow {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge/IE */
+}
+.tileRow::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Chromium Edge */
+}
