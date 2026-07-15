@@ -23,14 +23,22 @@
     --bg:#050506;--fg:#ededf0;--brand:#6EE7B7;
     --muted:#84848c;--muted-strong:#a8a8b0;--border:#1d1d22;
     --neg:#ff8b8b;
-    --cat-bank:#3D72D6;--cat-stocks:#1D9E6C;--cat-crypto:#B8811A;--cat-other:#8465E0;--cat-subs:#E0703D;
+    /* pastel allocation palette (matches the old dashboard's donut) — CVD
+       separation, chroma and 3:1 contrast validated against this bg */
+    --cat-bank:#7CC7F8;--cat-stocks:#C4B5FD;--cat-crypto:#46E0A8;--cat-other:#A78BFA;--cat-subs:#F98C8C;
     --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
     --serif:Georgia,'Times New Roman',serif;
     --font:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;
     --ease:cubic-bezier(.16,1,.3,1);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%}
+  /* body must be min-height (not fixed height): with a fixed 100% height the
+     bottom padding sits at the viewport edge and overflowing content runs PAST
+     it — so the last rows ended exactly under the fixed tab bar. min-height
+     lets the body grow with the content, putting the 150px clearance below
+     the final row where it belongs. */
+  html{height:100%}
+  body{min-height:100%}
   body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);display:flex;justify-content:center;padding:40px 20px calc(150px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased;position:relative}
   /* native scrollbar hidden — scrolling (wheel/touch/keyboard) still works fully,
      this only removes the OS scrollbar track so it doesn't sit as a white bar
@@ -70,7 +78,7 @@
   .row .nmwrap{min-width:0}
   .row .nm{font-size:14px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .hsub{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--muted);margin-top:1px}
-  .row .bal{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--muted-strong);padding:3px 7px;border-radius:6px;transition:background .12s,color .12s;text-shadow:0 0 10px rgba(110,231,183,.16)}
+  .row .bal{font-family:var(--mono);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--fg);padding:3px 7px;border-radius:6px;transition:background .12s,color .12s;text-shadow:0 0 12px rgba(110,231,183,.45)}
   .row .bal:hover{background:rgba(110,231,183,.09);color:var(--brand)}
   .row .bal.neg{color:var(--neg)}
   .row .del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;opacity:.45;padding:2px 4px;transition:opacity .12s,color .12s}
@@ -139,13 +147,13 @@
   .donutSvg path{transition:opacity .12s;cursor:pointer}
   .donutSvg path:hover{opacity:.8}
   .donutCenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-  .donutNum{font-family:var(--mono);font-size:13px;color:var(--fg);text-shadow:0 0 14px rgba(110,231,183,.3)}
+  .donutNum{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--fg);text-shadow:0 0 14px rgba(110,231,183,.45)}
   .donutSub{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
   .donutLegend{margin-top:14px;display:flex;flex-direction:column;gap:7px}
   .donutLeg{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted-strong)}
   .donutLegDot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
   .donutLeg span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .donutLegPct{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+  .donutLegPct{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--fg)}
   .donutEmpty{margin-top:10px;text-align:center;color:var(--muted);font-size:11.5px}
 
   .accountsGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
@@ -153,12 +161,12 @@
   .accountCard{border:1px solid var(--border);border-radius:16px;background:rgba(14,14,17,.5);padding:14px}
   .accountHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .accountLabel{font-size:13px;font-weight:600}
-  .accountTotal{font-family:var(--mono);font-size:12px;color:var(--muted-strong);text-shadow:0 0 8px rgba(110,231,183,.14)}
+  .accountTotal{font-family:var(--mono);font-size:12px;color:var(--muted-strong);text-shadow:0 0 10px rgba(110,231,183,.3)}
   .accountTotalPct{color:var(--muted);margin-left:3px}
   .accountList{display:flex;flex-direction:column;gap:6px}
   .accountRow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:8px 4px}
   .accountRowName{font-size:13px;cursor:pointer}
-  .accountRowAmount{font-family:var(--mono);font-size:13px;color:var(--muted-strong);cursor:pointer;padding:2px 6px;border-radius:6px;text-shadow:0 0 10px rgba(110,231,183,.16)}
+  .accountRowAmount{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--fg);cursor:pointer;padding:2px 6px;border-radius:6px;text-shadow:0 0 12px rgba(110,231,183,.4)}
   .accountRowAmount:hover{background:rgba(110,231,183,.09);color:var(--brand)}
   .inlineEditInput{width:100%;background:rgba(0,0,0,.45);border:1px solid var(--brand);border-radius:6px;padding:4px 7px;color:var(--fg);font-family:var(--mono);font-size:13px;outline:none}
   .inlineEditAmt{text-align:right}
@@ -175,13 +183,13 @@
   .activityHead{display:flex;justify-content:space-between;margin-bottom:8px}
   .activityEmpty{color:var(--muted);font-size:12px;padding:8px 0}
   .activityBucketLabel{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:10px 0 6px}
-  .activityRow{display:grid;grid-template-columns:3px 1fr auto auto;align-items:center;gap:9px;padding:6px 2px}
-  .activityBar{height:20px;border-radius:2px}
+  .activityRow{display:grid;grid-template-columns:4px 1fr auto auto;align-items:center;gap:10px;padding:9px 11px;margin-bottom:6px;border-radius:11px;background:rgba(255,255,255,.03)}
+  .activityBar{height:22px;border-radius:99px}
   .activityName{font-size:12.5px}
   .activityMeta{font-family:var(--mono);font-size:9.5px;color:var(--muted)}
-  .activityAmt{font-family:var(--mono);font-size:12px}
-  .activityAmt.up{color:var(--brand);text-shadow:0 0 10px rgba(110,231,183,.35)}
-  .activityAmt.down{color:var(--neg);text-shadow:0 0 10px rgba(255,139,139,.3)}
+  .activityAmt{font-family:var(--mono);font-size:13px;font-weight:700}
+  .activityAmt.up{color:var(--brand);text-shadow:0 0 12px rgba(110,231,183,.6)}
+  .activityAmt.down{color:var(--neg);text-shadow:0 0 12px rgba(255,139,139,.55)}
   .activityDate{font-family:var(--mono);font-size:9.5px;color:var(--muted)}
 
   /* ---- subs / orders / wishlist ---- */
@@ -215,7 +223,7 @@
   .subToggleDot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   .subToggle.on .subToggleDot{background:var(--brand)}
   .subRowCost{text-align:right}
-  .subRowCostBig{font-family:var(--mono);font-size:15px;color:var(--fg);text-shadow:0 0 10px rgba(110,231,183,.2)}
+  .subRowCostBig{font-family:var(--mono);font-size:15px;color:var(--fg);text-shadow:0 0 10px rgba(110,231,183,.35)}
   .subRowCostUnit{font-family:var(--mono);font-size:9px;color:var(--muted)}
   .subRowCostBilled{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
   .subRowActions{display:flex;gap:4px}
@@ -233,7 +241,7 @@
   .ordCard.deducted{opacity:.6}
   .ordHead{display:flex;align-items:center;gap:8px}
   .ordName{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ordAmt{font-family:var(--mono);font-size:14px;text-shadow:0 0 10px rgba(110,231,183,.2)}
+  .ordAmt{font-family:var(--mono);font-size:14px;text-shadow:0 0 10px rgba(110,231,183,.35)}
   .ordMetaRow{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
   .ordPill{font-family:var(--mono);font-size:9px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 8px}
   .ordPill.good{color:var(--brand);border-color:rgba(110,231,183,.35)}
@@ -260,7 +268,7 @@
   .wishRowName{font-size:13.5px}
   .wishRowMeta{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px}
   .wishRowAmtWrap{margin-left:auto;text-align:right}
-  .wishRowAmt{font-family:var(--mono);font-size:14px;text-shadow:0 0 10px rgba(110,231,183,.2)}
+  .wishRowAmt{font-family:var(--mono);font-size:14px;text-shadow:0 0 10px rgba(110,231,183,.35)}
   .wishRowPct{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px}
   .wishRowPct.warn{color:#e8c878}
   .wishRowPct.bad{color:var(--neg)}
@@ -415,7 +423,9 @@ function donutArcPath(cx,cy,rO,rI,a1,a2){
 }
 function donutHtml(nw){
   const slices=[];
-  ['bank','crypto','other'].forEach(t=>{const v=acctTotal(t);if(v>0)slices.push({name:TYPE_LABELS[t],color:CAT_COLOR[t],value:v})});
+  // bank/other are the two pastels closest in hue to stocks' lavender —
+  // crypto's green between them keeps every adjacent pair distinguishable
+  ['bank','other','crypto'].forEach(t=>{const v=acctTotal(t);if(v>0)slices.push({name:TYPE_LABELS[t],color:CAT_COLOR[t],value:v})});
   const st=stockTotal();if(st>0)slices.push({name:'Stocks',color:CAT_COLOR.stocks,value:st});
   const annualSubs=monthlyBurn()*12;if(annualSubs>0)slices.push({name:'Subs / yr',color:CAT_COLOR.subs,value:annualSubs});
   const total=slices.reduce((s,x)=>s+x.value,0);
@@ -478,7 +488,8 @@ function activityHtml(){
     const entries=buckets[b.key];if(!entries.length)return;
     rows+='<div class="activityBucketLabel">'+b.label+'</div>'+entries.map(e=>{
       const up=e.delta>=0,cls=up?'up':'down',sign=up?'+':'−';
-      return '<div class="activityRow"><span class="activityBar" style="background:'+(CAT_COLOR[e.type]||'var(--muted)')+'"></span>'
+      const barColor=CAT_COLOR[e.type]||'var(--muted)';
+      return '<div class="activityRow"><span class="activityBar" style="background:'+barColor+';box-shadow:0 0 9px '+barColor+'"></span>'
         +'<div><div class="activityName">'+esc(e.name||'(unnamed)')+'</div><div class="activityMeta">'+esc(e.type)+' · '+esc(e.kind)+'</div></div>'
         +'<span class="activityAmt '+cls+'">'+sign+esc(fmtMoney(Math.abs(e.delta)))+'</span><span class="activityDate">'+fmtActDate(e.ts)+'</span></div>';
     }).join('');
