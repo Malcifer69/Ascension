@@ -136,6 +136,74 @@ export function useTileHost(
         return
       }
 
+      // AI call — routed through /api/mentor so the Anthropic key stays out of
+      // the sealed tile entirely. The route prefers the server env key; if the
+      // user pasted a key instead, it rides as a header from HOST localStorage
+      // (never entering the tile or its synced data). The tile just gets the
+      // Messages API response back.
+      if (msg.type === 'ai') {
+        try {
+          let userKey = ''
+          try {
+            userKey = window.localStorage.getItem('vitality:anthropic:key') || ''
+          } catch {
+            /* storage unavailable — env key may still work */
+          }
+          const headers: Record<string, string> = { 'content-type': 'application/json' }
+          if (userKey) headers['x-user-key'] = userKey
+          const r = await fetch('/api/mentor', { method: 'POST', headers, body: JSON.stringify(msg.body) })
+          const j = await r.json()
+          if (r.ok && !j?.error) {
+            src.postMessage({ source: 'vitality-host', type: 'ai:result', id: msg.id, data: j }, '*')
+          } else {
+            const reason =
+              r.status === 401
+                ? 'no_key'
+                : String(j?.error?.message || j?.error || 'ai_failed')
+            src.postMessage({ source: 'vitality-host', type: 'ai:error', id: msg.id, reason }, '*')
+          }
+        } catch {
+          src.postMessage({ source: 'vitality-host', type: 'ai:error', id: msg.id, reason: 'fetch_failed' }, '*')
+        }
+        return
+      }
+
+      // Save (or clear) the user's pasted Anthropic key — HOST localStorage
+      // only. Deliberately not written to the tile store or Supabase: the key
+      // never syncs anywhere.
+      if (msg.type === 'aikey') {
+        try {
+          const key = String(msg.key || '').trim()
+          if (key) window.localStorage.setItem('vitality:anthropic:key', key)
+          else window.localStorage.removeItem('vitality:anthropic:key')
+        } catch {
+          /* ignore */
+        }
+        src.postMessage({ source: 'vitality-host', type: 'aikey:ok', id: msg.id }, '*')
+        return
+      }
+
+      // Does ANY key exist? 'env' (server-side), 'local' (pasted), or null.
+      if (msg.type === 'aistatus') {
+        let has: string | null = null
+        try {
+          if (window.localStorage.getItem('vitality:anthropic:key')) has = 'local'
+        } catch {
+          /* ignore */
+        }
+        if (!has) {
+          try {
+            const r = await fetch('/api/mentor')
+            const j = await r.json()
+            if (j?.env) has = 'env'
+          } catch {
+            /* ignore */
+          }
+        }
+        src.postMessage({ source: 'vitality-host', type: 'aistatus:result', id: msg.id, has }, '*')
+        return
+      }
+
       // Cross-tile READ — the host hands a tile another slot's saved data so
       // tiles can react to each other client-side (e.g. Peak reshaping from the
       // Vitals recovery) with no /sweep and no connector. Read-only, the user's

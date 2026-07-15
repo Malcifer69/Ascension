@@ -28,6 +28,10 @@ const SHIM = `<script>
     else if (m.type === 'youtube:error') p.reject(new Error(m.reason || 'youtube_failed'));
     else if (m.type === 'stock:result') p.resolve(m.price);
     else if (m.type === 'stock:error') p.reject(new Error(m.reason || 'stock_failed'));
+    else if (m.type === 'ai:result') p.resolve(m.data);
+    else if (m.type === 'ai:error') p.reject(new Error(m.reason || 'ai_failed'));
+    else if (m.type === 'aikey:ok') p.resolve(true);
+    else if (m.type === 'aistatus:result') p.resolve(m.has);
   });
   function call(type, extra) {
     return new Promise(function (resolve, reject) {
@@ -37,13 +41,14 @@ const SHIM = `<script>
       if (extra) for (var k in extra) msg[k] = extra[k];
       parent.postMessage(msg, '*');
       // backstop: never let a tile hang if a reply is somehow lost.
+      // AI calls (vision OCR, chat) legitimately take longer than data ops.
       setTimeout(function () {
         if (!pending[id]) return;
         delete pending[id];
         if (type === 'load') resolve([]);
         else if (type === 'read') resolve(null);
         else reject(new Error('vitality_timeout'));
-      }, 8000);
+      }, type === 'ai' ? 120000 : 8000);
     });
   }
   window.Vitality = {
@@ -53,6 +58,9 @@ const SHIM = `<script>
     youtube: function (handle) { return call('youtube', { handle: handle }); },
     stock: function (symbol) { return call('stock', { symbol: symbol }); },
     read: function (slot) { return call('read', { slot: slot }); },
+    ai: function (body) { return call('ai', { body: body }); },
+    aiKey: function (key) { return call('aikey', { key: key }); },
+    aiStatus: function () { return call('aistatus', {}); },
     report: function (stream) {
       parent.postMessage({ source: 'vitality-tile', type: 'report', stream: stream }, '*');
     }

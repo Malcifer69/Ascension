@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import WelcomeBackdrop from '@/components/WelcomeBackdrop'
 import DashboardHeaderGem from '@/app/app/DashboardHeaderGem'
 import { CORE_TILES } from '@/lib/tiles/coreTiles'
+import { site } from '@/content/site'
 import {
   allGoals,
   activeGoalId,
@@ -29,6 +30,350 @@ import {
  */
 
 const label = (tile: string) => CORE_TILES[tile as keyof typeof CORE_TILES]?.label ?? tile
+
+/* ── the mentor that TALKS — chat over the user's own key via /api/mentor ── */
+
+/** Everything the mentor can see: goals + weights, the noticed feed, the
+ *  profile, and each tile's raw saved data (read from the same localStorage
+ *  the tile host writes — userId is the base's fixed "me"). */
+function gatherDashboardData(): Record<string, unknown> {
+  const data: Record<string, unknown> = {}
+  try {
+    data.goals = allGoals()
+    data.noticed = noticedFeed()
+  } catch {
+    /* ignore */
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const profile = window.localStorage.getItem('vitality:profile')
+      if (profile) data.profile = JSON.parse(profile)
+    } catch {
+      /* ignore */
+    }
+    for (const slot of ['train', 'fuel', 'vitals', 'brand', 'peak', 'finance']) {
+      try {
+        const raw = window.localStorage.getItem(`vitality:me:tile:${slot}:data`)
+        if (raw) data[slot] = JSON.parse(raw)
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return data
+}
+
+const MENTOR_SYSTEM = [
+  "You are the user's personal AI mentor inside their Vitality life dashboard — the overseer of their life equation: y (the goal) = the weighted sum of the x tiles.",
+  "You can see ALL their data in the JSON below: every goal with its tile weights and progress, the noticed-patterns feed, their profile, and each tile's raw data (training, fuel/water, vitals, brand, peak, and finance — accounts, subscriptions, orders, wishlist).",
+  'Give honest, specific, encouraging guidance across any area of their life — not just one tile. Tie advice to their actual numbers whenever you can.',
+  'FORMAT RULES (always follow):',
+  "1) Answer in short bullet points — start each line with '- '.",
+  '2) Keep each bullet to one short line, few words, no fluff.',
+  '3) Use plain language, no jargon.',
+  '4) Wrap key words and numbers in **double asterisks** (e.g. **$200/mo**).',
+  "5) Max 5 bullets, then ONE final bullet starting with '- Do today:' giving the single action.",
+  site.name ? `The user's name is ${site.name}.` : '',
+]
+  .filter(Boolean)
+  .join('\n')
+
+/** Render a mentor line: '**bold**' spans highlighted, leading '- ' stripped. */
+function RichLine({ text, bullet, accent }: { text: string; bullet: boolean; accent: string }) {
+  const body = text.replace(/^-\s*/, '')
+  return (
+    <span style={{ display: 'flex', gap: 10 }}>
+      {bullet && (
+        <span aria-hidden style={{ color: accent, flex: '0 0 auto' }}>
+          ◆
+        </span>
+      )}
+      <span>
+        {body.split(/\*\*(.+?)\*\*/g).map((part, j) =>
+          j % 2 ? (
+            <strong key={j} style={{ color: 'var(--fg, #fff)', fontWeight: 600 }}>
+              {part}
+            </strong>
+          ) : (
+            part
+          ),
+        )}
+      </span>
+    </span>
+  )
+}
+
+function MentorChat({ accent, mono }: { accent: string; mono: React.CSSProperties }) {
+  const [msgs, setMsgs] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
+  const [draft, setDraft] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [keyState, setKeyState] = useState<'unknown' | 'ok' | 'missing'>('unknown')
+  const [keyDraft, setKeyDraft] = useState('')
+  const feedRef = useRef<HTMLDivElement | null>(null)
+
+  // Does ANY key exist — server env (preferred) or one pasted into this browser?
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        if (window.localStorage.getItem('vitality:anthropic:key')) {
+          if (alive) setKeyState('ok')
+          return
+        }
+      } catch {
+        /* ignore */
+      }
+      try {
+        const r = await fetch('/api/mentor')
+        const j = await r.json()
+        if (alive) setKeyState(j?.env ? 'ok' : 'missing')
+      } catch {
+        if (alive) setKeyState('missing')
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  useEffect(() => {
+    feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight, behavior: 'smooth' })
+  }, [msgs, busy])
+
+  const saveKey = () => {
+    const v = keyDraft.trim()
+    if (!v) return
+    try {
+      window.localStorage.setItem('vitality:anthropic:key', v)
+    } catch {
+      /* ignore */
+    }
+    setKeyDraft('')
+    setKeyState('ok')
+  }
+
+  const send = async () => {
+    const text = draft.trim()
+    if (!text || busy) return
+    const history = [...msgs, { role: 'user' as const, text }]
+    setMsgs(history)
+    setDraft('')
+    setBusy(true)
+    try {
+      const headers: Record<string, string> = { 'content-type': 'application/json' }
+      try {
+        const userKey = window.localStorage.getItem('vitality:anthropic:key')
+        if (userKey) headers['x-user-key'] = userKey
+      } catch {
+        /* ignore */
+      }
+      const r = await fetch('/api/mentor', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: 'claude-opus-4-8',
+          max_tokens: 1024,
+          system:
+            MENTOR_SYSTEM +
+            '\n\nCurrent dashboard data as JSON:\n' +
+            JSON.stringify(gatherDashboardData()).slice(0, 24000),
+          messages: history.map((m) => ({ role: m.role, content: m.text })),
+        }),
+      })
+      const j = await r.json()
+      let reply = ''
+      if (r.ok && Array.isArray(j?.content)) {
+        reply = j.content
+          .filter((b: { type: string }) => b.type === 'text')
+          .map((b: { text: string }) => b.text)
+          .join('\n')
+          .trim()
+      }
+      if (!reply) {
+        if (r.status === 401) {
+          setKeyState('missing')
+          reply = '- I need an **Anthropic key** to talk — add yours below, then ask me again.'
+        } else {
+          reply =
+            "- Hmm, I couldn't reach my brain just now — **" +
+            String(j?.error?.message || j?.error || 'try again in a moment') +
+            '**'
+        }
+      }
+      setMsgs([...history, { role: 'assistant', text: reply }])
+    } catch {
+      setMsgs([
+        ...history,
+        { role: 'assistant', text: "- Hmm, I couldn't reach my brain just now — check your **connection** and try again." },
+      ])
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ width: 'min(560px, 100%)', margin: '46px auto 0', textAlign: 'left', animation: 'fadeUp .8s ease .62s both' }}>
+      <p style={{ ...mono, fontSize: 10.5, color: accent, margin: '0 0 10px', transition: 'color .8s ease' }}>
+        talk to your mentor
+      </p>
+
+      {msgs.length > 0 && (
+        <div
+          ref={feedRef}
+          style={{ maxHeight: 340, overflowY: 'auto', scrollbarWidth: 'none', marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
+          {msgs.map((m, i) =>
+            m.role === 'user' ? (
+              <div key={i} style={{ alignSelf: 'flex-end', maxWidth: '86%' }}>
+                <div
+                  style={{
+                    background: `${accent}14`,
+                    border: `1px solid ${accent}33`,
+                    borderRadius: '16px 16px 4px 16px',
+                    padding: '9px 14px',
+                    color: 'var(--fg, #fff)',
+                    fontSize: 13.5,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {m.text}
+                </div>
+              </div>
+            ) : (
+              <div key={i} style={{ alignSelf: 'flex-start', maxWidth: '92%' }}>
+                <div style={{ color: 'var(--muted, #b9c4be)', fontSize: 13.5, lineHeight: 1.7 }}>
+                  {m.text.split('\n').map((line, li) =>
+                    line.trim() ? (
+                      <div key={li} style={{ margin: '5px 0' }}>
+                        <RichLine text={line} bullet={line.trim().startsWith('-')} accent={accent} />
+                      </div>
+                    ) : null,
+                  )}
+                </div>
+              </div>
+            ),
+          )}
+          {busy && (
+            <div style={{ alignSelf: 'flex-start', display: 'flex', gap: 5, padding: '6px 2px' }}>
+              {[0, 1, 2].map((d) => (
+                <span
+                  key={d}
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: accent,
+                    animation: `mentorPulse 1s ease ${d * 0.18}s infinite`,
+                    display: 'inline-block',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {keyState === 'missing' && (
+        <div
+          style={{
+            border: '1px solid rgba(232,200,120,.35)',
+            background: 'rgba(232,200,120,.06)',
+            borderRadius: 14,
+            padding: '12px 14px',
+            marginBottom: 12,
+          }}
+        >
+          <p style={{ fontSize: 12.5, lineHeight: 1.6, color: 'var(--muted, #b9c4be)', margin: 0 }}>
+            <strong style={{ color: '#e8c878' }}>One-time setup:</strong> the mentor talks with your own Anthropic API
+            key. It stays in this browser and goes straight to Anthropic through your own site — key at
+            console.anthropic.com → settings → keys. (Or set <code style={{ fontSize: 11 }}>ANTHROPIC_API_KEY</code> in
+            .env.local and it never touches the browser.)
+          </p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <input
+              type="password"
+              value={keyDraft}
+              onChange={(e) => setKeyDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveKey()
+              }}
+              placeholder="sk-ant-…"
+              autoComplete="off"
+              style={{
+                flex: 1,
+                background: 'rgba(0,0,0,.45)',
+                border: '1px solid var(--border, #333)',
+                borderRadius: 10,
+                padding: '9px 12px',
+                color: 'var(--fg, #fff)',
+                fontFamily: 'ui-monospace, Menlo, monospace',
+                fontSize: 12,
+                outline: 'none',
+              }}
+            />
+            <button
+              type="button"
+              onClick={saveKey}
+              style={{
+                flex: '0 0 auto',
+                background: accent,
+                color: '#0a0f0c',
+                border: 'none',
+                borderRadius: 10,
+                padding: '9px 14px',
+                fontWeight: 600,
+                fontSize: 12.5,
+                cursor: 'pointer',
+              }}
+            >
+              Save key
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          alignItems: 'center',
+          border: '1px dashed var(--border, #333)',
+          borderRadius: 999,
+          padding: '6px 8px 6px 18px',
+        }}
+      >
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') send()
+          }}
+          placeholder="Ask the mentor anything — it sees your whole board."
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--fg, #fff)', fontSize: 13.5 }}
+        />
+        <button
+          type="button"
+          onClick={send}
+          disabled={busy}
+          style={{
+            flex: '0 0 auto',
+            background: busy ? `${accent}55` : accent,
+            color: '#0a0f0c',
+            border: 'none',
+            borderRadius: 999,
+            padding: '9px 16px',
+            fontWeight: 600,
+            fontSize: 12.5,
+            cursor: busy ? 'default' : 'pointer',
+            transition: 'background .4s ease',
+          }}
+        >
+          {busy ? 'thinking…' : 'Ask'}
+        </button>
+      </div>
+    </div>
+  )
+}
 
 /* ── a number that rolls like a ticker ── */
 function Roll({ value, color, size }: { value: number; color: string; size: number }) {
@@ -434,6 +779,9 @@ export default function MentorPage({
             results · progress · advice — swept and computed by the mentor, always
           </p>
         </div>
+
+        {/* the mentor TALKS — chat with full sight of the board */}
+        <MentorChat accent={accent} mono={mono} />
 
         {/* write a new goal — the mentor shapes it */}
         <div

@@ -59,7 +59,7 @@
     linear-gradient(245deg, transparent 38%, rgba(10,18,16,.9) 39%, rgba(10,18,16,.9) 62%, transparent 63%);
     -webkit-mask-image:linear-gradient(to top,#000 55%,transparent);mask-image:linear-gradient(to top,#000 55%,transparent)}
   .shell{width:100%;max-width:600px}
-  h1{font-size:24px;font-weight:600;letter-spacing:-.01em}
+  h1{font-family:var(--serif);font-style:italic;font-weight:400;font-size:34px;letter-spacing:.01em}
   .sub{color:var(--muted);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:6px 0 0}
   .well{margin-top:34px;text-align:center}
   .kick{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--brand)}
@@ -276,6 +276,54 @@
   .wishRowBarFill{height:100%;background:var(--brand);border-radius:99px}
   .wishRowBarFill.warn{background:#e8c878}
   .wishRowBarFill.bad{background:var(--neg)}
+
+  /* ---- AI screenshot import (statement / subs / receipt) ---- */
+  .importTrigger{display:flex;align-items:center;gap:12px;width:100%;margin-bottom:14px;padding:12px 14px;
+    border:1px solid var(--border);border-radius:14px;background:rgba(14,14,17,.5);cursor:pointer;
+    text-align:left;font:inherit;color:var(--fg);transition:border-color .15s}
+  .importTrigger:hover{border-color:rgba(110,231,183,.4)}
+  .importTriggerIcon{flex:0 0 auto;width:34px;height:34px;display:grid;place-items:center;border-radius:10px;
+    background:var(--brand);color:#04140d;font-size:16px;font-weight:700}
+  .importTriggerTitle{display:block;font-size:13.5px;font-weight:600}
+  .importTriggerSub{display:block;font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px}
+  .impOverlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+    padding:20px;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .impCard{width:min(480px,100%);max-height:88vh;overflow:auto;background:#0b0b0e;border:1px solid var(--border);
+    border-radius:20px;padding:20px;scrollbar-width:none}
+  .impCard::-webkit-scrollbar{display:none}
+  .impEyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--brand)}
+  .impHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .impTitle{font-size:22px;font-weight:700;margin-top:4px}
+  .impTitle em{font-family:var(--serif);color:var(--brand)}
+  .impClose{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);
+    background:rgba(255,255,255,.04);color:var(--fg);font-size:15px;cursor:pointer}
+  .impDrop{margin-top:16px;padding:34px 16px;border:1px dashed rgba(110,231,183,.3);border-radius:16px;
+    background:rgba(110,231,183,.03);text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+  .impDrop:hover,.impDrop.over{border-color:var(--brand);background:rgba(110,231,183,.07)}
+  .impDropIcon{width:44px;height:44px;margin:0 auto 12px;display:grid;place-items:center;border-radius:12px;
+    background:var(--brand);color:#04140d;font-size:20px;font-weight:700}
+  .impDropTitle{font-family:var(--serif);font-style:italic;font-size:19px}
+  .impDropSub{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .impNote{margin-top:14px;padding:12px 14px;border-radius:12px;border:1px solid rgba(232,200,120,.3);
+    background:rgba(232,200,120,.06);font-size:12px;line-height:1.55;color:var(--muted-strong)}
+  .impNote b{color:#e8c878}
+  .impBtnRow{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .impBtn{border:none;background:var(--brand);color:#04140d;font-weight:700;font-size:13px;border-radius:12px;
+    padding:11px 18px;cursor:pointer}
+  .impBtn.ghost{background:transparent;border:1px solid var(--border);color:var(--muted-strong)}
+  .impKeyIn{width:100%;margin-top:14px;background:rgba(0,0,0,.45);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;color:var(--fg);font-family:var(--mono);font-size:12.5px;outline:none}
+  .impKeyIn:focus{border-color:var(--brand)}
+  .impBusy{margin-top:16px;padding:30px 16px;text-align:center}
+  .impBusyDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--brand);
+    animation:impPulse 1s ease infinite}
+  @keyframes impPulse{0%,100%{opacity:.3;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+  .impBusyText{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:12px}
+  .impError{margin-top:14px;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,139,139,.35);
+    background:rgba(255,139,139,.06);font-size:12.5px;color:var(--neg)}
+  .impResult{margin-top:16px;padding:22px 16px;text-align:center}
+  .impResultNum{font-family:var(--serif);font-style:italic;font-size:38px;color:var(--brand);text-shadow:0 0 24px rgba(110,231,183,.35)}
+  .impResultSub{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 </style>
 </head>
 <body>
@@ -284,6 +332,7 @@
   <h1>Finance</h1>
   <p class="sub">Net worth · Subs · Orders · Wishlist</p>
   <div class="well" id="app"></div>
+  <div id="imp"></div>
 </div>
 <script>
 let store={};let view='networth';
@@ -501,6 +550,7 @@ function netWorthViewHtml(){
   return '<section class="section"><div class="sectionEyebrow"><span>Net worth</span></div>'
     +'<div class="well" style="text-align:left;margin-top:0"><div class="kick" style="text-align:left">✦ total net worth</div>'
     +'<div class="worth" style="text-align:left;font-size:clamp(38px,8vw,58px)'+(nw<0?';color:var(--neg)':'')+'">'+esc(fmtMoney(nw))+'</div>'+dailyDeltaHtml()+'</div>'
+    +importTriggerHtml('statement','Import from screenshot','read a statement in 5 seconds')
     +'<div class="overviewGrid">'+chartHtml()+donutHtml(nw)+'</div>'
     +'<div class="accountsGrid">'+accountCardHtml('bank',nw)+accountCardHtml('crypto',nw)+accountCardHtml('other',nw)+'</div>'
     +activityHtml()+'</section>';
@@ -601,6 +651,7 @@ function subsViewHtml(){
     }).join('');
   }
   return '<section class="section"><div class="sectionEyebrow"><span>Active subscriptions</span><span class="sectionCount">'+subs().length+' '+(subs().length===1?'sub':'subs')+(monthlyTotal>0?'<span class="sectionCountSep"> · '+esc(fmtMoney(monthlyTotal*12))+' / yr</span>':'')+'</span></div>'
+    +importTriggerHtml('subs','Import subscriptions','snap a billing page, pull every sub at once')
     +'<div class="addCard"><div class="subsHero"><div><div class="nwHeroLabel">Monthly burn</div><div class="subsHeroNum">'+esc(fmtMoney(monthlyTotal))+'<span class="subsHeroNumSuffix">/ mo</span></div>'+(monthlyTotal>0?'<div class="subsHeroSub">~'+esc(fmtMoney(monthlyTotal*12))+' per year</div>':'')+'</div></div></div>'
     +addForm+'<div>'+list+'</div></section>';
 }
@@ -672,6 +723,7 @@ function ordersViewHtml(){
   if(!orders().length)list='<div class="emptyState"><div class="emptyTitle">Nothing on the way.</div><div class="emptyBody">Log an order above. Pick the account it comes out of and the expected arrival date — the dashboard shows what % of your net worth it costs.</div></div>';
   else list=sorted.map(o=>orderCardHtml(o,nw)).join('');
   return '<section class="section"><div class="sectionEyebrow"><span>Incoming orders</span><span class="sectionCount">'+orders().length+' '+(orders().length===1?'item':'items')+'</span></div>'
+    +importTriggerHtml('receipt','Import receipt','snap a receipt, auto-log the purchase')
     +addForm+'<div>'+list+'</div></section>';
 }
 
@@ -707,6 +759,242 @@ function wishViewHtml(){
     +'<div class="wishHeroBar"><div class="wishHeroBarFill '+heroCls+'" style="width:'+heroFill+'%"></div></div>'
     +'<div class="wishHeroFoot">'+(heroPct==null?'add net worth first to see this as a %':'your wishlist is '+heroPct.toFixed(2)+'% of your '+fmtMoney(nw)+' net worth')+'</div></div>'
     +addForm+'<div>'+list+'</div></section>';
+}
+
+/* ============================================================
+ * AI screenshot import — statement / subs / receipt.
+ *
+ * The tile NEVER holds the Anthropic key. window.Vitality.ai(body) posts the
+ * Messages API body to the host, which routes it through /api/mentor — the
+ * key lives server-side (.env.local / Vercel) or, as a fallback, in the HOST
+ * page's localStorage where the user pasted it. Cheapest-possible OCR:
+ * Haiku 4.5 (vision-capable, $1/$5 per 1M — never Sonnet/Opus for OCR),
+ * image downscaled to 1024px + JPEG before upload, forced tool output
+ * (tool_choice pins `extract`), compact short-key JSON.
+ * ============================================================ */
+const imp={open:null,busy:false,error:null,result:null,keyMode:false,hasKey:undefined};
+const IMPORT_COPY={
+  statement:{title:'Read a <em>statement</em> screenshot',desc:'Drop a bank/brokerage screenshot and Claude reads every account and balance, then fills them in automatically.',drop:'Drop a statement screenshot'},
+  subs:{title:'Pull <em>subscriptions</em> from a screenshot',desc:'Snap your billing page and Claude detects every recurring subscription and adds them at once.',drop:'Drop a billing screenshot'},
+  receipt:{title:'Auto-log a <em>receipt</em>',desc:'Snap a receipt and Claude logs the purchase to your orders automatically.',drop:'Drop a receipt screenshot'},
+};
+const EXTRACT_SYSTEM=[
+  'You are a precise financial-screenshot OCR extractor. You read ONE screenshot of a bank/brokerage statement, a subscriptions/billing page, or a purchase receipt, and return its line items by calling the `extract` tool. Output the tool call only — never prose.',
+  '',
+  'Each element of `items`:',
+  '- t: category — "bank","stocks","crypto","other" for statement/balance lines; "sub" for a recurring subscription; "order" for a receipt/purchase.',
+  '- n: short name (account, holding, service, or merchant). No amounts inside the name.',
+  '- a: numeric amount, no thousands separators or currency symbols (e.g. 1234.50).',
+  '- p: billing period, subscriptions only — "monthly","yearly","weekly". Omit otherwise.',
+  '',
+  'Rules: one item per distinct line; skip totals that merely sum other lines; omit any field you are unsure of (never emit null or empty strings); if nothing is readable, return an empty items array.',
+  '',
+  'Examples (shape only):',
+  '"Checking $4,210.55" -> {"t":"bank","n":"Checking","a":4210.55}',
+  '"VTI 12 sh — $3,100" -> {"t":"stocks","n":"VTI","a":3100}',
+  '"Netflix $19.90/mo" -> {"t":"sub","n":"Netflix","a":19.9,"p":"monthly"}',
+  '"Target total 54.30" -> {"t":"order","n":"Target","a":54.3}',
+].join('\n');
+const EXTRACT_TOOL={
+  name:'extract',
+  description:'Return every line item read from the financial screenshot.',
+  input_schema:{
+    type:'object',
+    additionalProperties:false,
+    properties:{
+      items:{
+        type:'array',
+        items:{
+          type:'object',
+          additionalProperties:false,
+          properties:{
+            t:{type:'string',enum:['bank','stocks','crypto','other','sub','order']},
+            n:{type:'string'},
+            a:{type:'number'},
+            p:{type:'string',enum:['monthly','yearly','weekly']},
+          },
+          required:['t','n','a'],
+        },
+      },
+    },
+    required:['items'],
+  },
+};
+const KIND_HINT={
+  statement:'This is a bank/brokerage statement screenshot. Extract every account and balance line.',
+  subs:'This is a subscriptions/billing page screenshot. Extract every recurring subscription.',
+  receipt:'This is a purchase receipt screenshot. Extract the purchase(s).',
+};
+
+function downscaleImage(file){
+  return new Promise(function(resolve,reject){
+    var fr=new FileReader();
+    fr.onerror=function(){reject(new Error('Could not read that file.'))};
+    fr.onload=function(){
+      var img=new Image();
+      img.onerror=function(){reject(new Error('That does not look like an image.'))};
+      img.onload=function(){
+        var MAX=1024,w=img.width,h=img.height;
+        var scale=Math.min(1,MAX/Math.max(w,h));
+        var cw=Math.max(1,Math.round(w*scale)),ch=Math.max(1,Math.round(h*scale));
+        var c=document.createElement('canvas');c.width=cw;c.height=ch;
+        c.getContext('2d').drawImage(img,0,0,cw,ch);
+        var dataUrl=c.toDataURL('image/jpeg',0.8);
+        resolve({b64:dataUrl.split(',')[1],mediaType:'image/jpeg'});
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+async function callExtract(kind,img){
+  if(!window.Vitality.ai)throw new Error('no_key');
+  const body={
+    model:'claude-haiku-4-5',
+    max_tokens:500,
+    temperature:0,
+    system:[{type:'text',text:EXTRACT_SYSTEM,cache_control:{type:'ephemeral'}}],
+    tools:[EXTRACT_TOOL],
+    tool_choice:{type:'tool',name:'extract'},
+    messages:[{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:img.mediaType,data:img.b64}},
+      {type:'text',text:KIND_HINT[kind]},
+    ]}],
+  };
+  const j=await window.Vitality.ai(body);
+  const block=(j.content||[]).find(b=>b.type==='tool_use'&&b.name==='extract');
+  if(!block||!block.input||!Array.isArray(block.input.items))throw new Error('The model did not return the expected structure.');
+  return block.input.items;
+}
+
+function applyImport(kind,items){
+  let count=0;
+  for(const it of items){
+    const name=String(it.n||'').trim();const amount=Number(it.a);
+    if(!name||!isFinite(amount))continue;
+    if(kind==='statement'){
+      const type=it.t==='bank'?'bank':it.t==='crypto'?'crypto':'other';
+      accts().push({id:'a'+Math.random().toString(36).slice(2,8),name,balance:amount,type});
+      pushActivity({name,type,delta:amount,kind:'add'});
+      count++;
+    }else if(kind==='subs'){
+      subs().push({id:'s'+Math.random().toString(36).slice(2,8),name,amount,period:(it.p==='yearly'||it.p==='weekly')?it.p:'monthly',renewal:null,fromAccountId:null,autoDeduct:false});
+      count++;
+    }else{
+      orders().push({id:'o'+Math.random().toString(36).slice(2,8),name,amount,fromAccountId:null,date:null,ts:Date.now(),deductedAt:null,pctAtDeduction:null,deductedFromName:null});
+      count++;
+    }
+  }
+  if(kind==='statement')snapshot();
+  return count;
+}
+
+async function runImport(kind,file){
+  if(!file)return;
+  imp.busy=true;imp.error=null;imp.result=null;renderImport();
+  try{
+    const img=await downscaleImage(file);
+    let items=null,lastErr=null;
+    for(let attempt=0;attempt<2&&items===null;attempt++){
+      try{items=await callExtract(kind,img);}
+      catch(e){
+        lastErr=e;const m=String(e&&e.message||'');
+        if(m==='no_key'){imp.busy=false;imp.keyMode=true;imp.hasKey=null;renderImport();return;}
+        if(m.indexOf('authentication')>=0||m.indexOf('api-key')>=0||m.indexOf('api_key')>=0)break; // bad key → no retry
+      }
+    }
+    if(items===null)throw lastErr||new Error('Could not read that screenshot.');
+    const count=applyImport(kind,items);
+    const noun=kind==='statement'?(count===1?'account':'accounts'):kind==='subs'?(count===1?'subscription':'subscriptions'):(count===1?'order':'orders');
+    if(kind==='statement')view='networth';else if(kind==='subs')view='subs';else view='orders';
+    imp.busy=false;imp.result={count:count,noun:noun};
+    persist();render();renderImport();
+  }catch(err){
+    imp.busy=false;
+    imp.error=(err&&err.message)||'Something went wrong. Check your key and try again.';
+    renderImport();
+  }
+}
+
+function importTriggerHtml(kind,title,sub){
+  return '<button type="button" class="importTrigger" data-act="impOpen" data-kind="'+kind+'">'
+    +'<span class="importTriggerIcon" aria-hidden>↗</span>'
+    +'<span><span class="importTriggerTitle">'+title+'</span><span class="importTriggerSub">'+sub+'</span></span></button>';
+}
+
+async function openImport(kind){
+  imp.open=kind;imp.busy=false;imp.error=null;imp.result=null;imp.keyMode=false;imp.hasKey=undefined;
+  renderImport();
+  try{imp.hasKey=window.Vitality.aiStatus?await window.Vitality.aiStatus():null;}
+  catch(e){imp.hasKey=null;}
+  if(imp.open===kind&&!imp.hasKey)imp.keyMode=true;
+  renderImport();
+}
+
+function renderImport(){
+  const host=document.getElementById('imp');if(!host)return;
+  if(!imp.open){host.innerHTML='';return;}
+  const copy=IMPORT_COPY[imp.open];
+  let bodyHtml;
+  if(imp.busy){
+    bodyHtml='<div class="impBusy"><span class="impBusyDot"></span><span class="impBusyDot" style="animation-delay:.18s;margin-left:6px"></span><span class="impBusyDot" style="animation-delay:.36s;margin-left:6px"></span>'
+      +'<div class="impBusyText">Claude is reading your screenshot…</div></div>';
+  }else if(imp.result){
+    bodyHtml='<div class="impResult"><div class="impResultNum">+'+imp.result.count+'</div>'
+      +'<div class="impResultSub">'+imp.result.noun+' added</div></div>'
+      +'<div class="impBtnRow"><button type="button" class="impBtn" data-act="impClose">Done</button></div>';
+  }else if(imp.keyMode){
+    bodyHtml='<div class="impDrop" style="cursor:default"><div class="impDropIcon" aria-hidden>↗</div>'
+      +'<div class="impDropTitle">Screenshot import</div>'
+      +'<div class="impDropSub">needs an Anthropic key</div></div>'
+      +'<div class="impNote"><b>One-time setup:</b> AI import calls Claude with your own Anthropic API key. '
+      +'It stays in this browser and is sent straight to Anthropic through your own site. Everything else here works offline. '
+      +'Key at console.anthropic.com → settings → keys.</div>'
+      +'<input class="impKeyIn" id="impKeyIn" type="password" placeholder="sk-ant-…" autocomplete="off" />'
+      +(imp.error?'<div class="impError">'+esc(imp.error)+'</div>':'')
+      +'<div class="impBtnRow"><button type="button" class="impBtn ghost" data-act="impClose">Cancel</button>'
+      +'<button type="button" class="impBtn" data-act="impSaveKey">Save key</button></div>';
+  }else{
+    bodyHtml='<div class="impDrop" id="impDrop"><div class="impDropIcon" aria-hidden>↗</div>'
+      +'<div class="impDropTitle">'+copy.drop+'</div>'
+      +'<div class="impDropSub">or click to choose a file</div></div>'
+      +'<input type="file" id="impFile" accept="image/*" style="display:none" />'
+      +(imp.error?'<div class="impError">'+esc(imp.error)+'</div>':'')
+      +(imp.hasKey==='local'
+        ?'<div class="impBtnRow"><button type="button" class="impBtn ghost" data-act="impForgetKey">Forget my key</button></div>'
+        :'');
+  }
+  host.innerHTML='<div class="impOverlay" id="impOverlay"><div class="impCard">'
+    +'<div class="impHead"><div><div class="impEyebrow">Import</div><div class="impTitle">'+copy.title+'</div>'
+    +'<p style="font-size:12.5px;color:var(--muted-strong);margin-top:8px;line-height:1.55">'+copy.desc+'</p></div>'
+    +'<button type="button" class="impClose" data-act="impClose" aria-label="Close">×</button></div>'
+    +bodyHtml+'</div></div>';
+
+  const overlay=document.getElementById('impOverlay');
+  if(overlay)overlay.addEventListener('mousedown',function(e){if(e.target===overlay){imp.open=null;renderImport();}});
+  const drop=document.getElementById('impDrop'),fileIn=document.getElementById('impFile');
+  if(drop&&fileIn){
+    drop.addEventListener('click',function(){fileIn.click();});
+    drop.addEventListener('dragover',function(e){e.preventDefault();drop.classList.add('over');});
+    drop.addEventListener('dragleave',function(){drop.classList.remove('over');});
+    drop.addEventListener('drop',function(e){e.preventDefault();drop.classList.remove('over');
+      const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];if(f)runImport(imp.open,f);});
+    fileIn.addEventListener('change',function(){const f=fileIn.files&&fileIn.files[0];if(f)runImport(imp.open,f);});
+  }
+  const keyIn=document.getElementById('impKeyIn');
+  if(keyIn){keyIn.focus();keyIn.addEventListener('keydown',function(e){if(e.key==='Enter')saveImportKey();});}
+}
+
+async function saveImportKey(){
+  const keyIn=document.getElementById('impKeyIn');
+  const val=(keyIn?keyIn.value:'').trim();
+  if(!val){if(keyIn)keyIn.focus();return;}
+  try{
+    if(window.Vitality.aiKey)await window.Vitality.aiKey(val);
+    imp.keyMode=false;imp.error=null;imp.hasKey='local';
+  }catch(e){imp.error='Could not save the key — try again.';}
+  renderImport();
 }
 
 /* ============================================================
@@ -832,6 +1120,13 @@ document.addEventListener('keydown',e=>{
   if(act==='addSub')addSub();else if(act==='addOrder')addOrder();else if(act==='addWish')addWish();
 });
 document.addEventListener('click',e=>{
+  const impOpen=e.target.closest('[data-act="impOpen"]');
+  if(impOpen){openImport(impOpen.getAttribute('data-kind'));return}
+  if(e.target.closest('[data-act="impClose"]')){imp.open=null;renderImport();return}
+  if(e.target.closest('[data-act="impSaveKey"]')){saveImportKey();return}
+  if(e.target.closest('[data-act="impForgetKey"]')){
+    (window.Vitality.aiKey?window.Vitality.aiKey(''):Promise.resolve()).then(function(){imp.hasKey=null;imp.keyMode=true;renderImport();});
+    return}
   const tab=e.target.closest('[data-view]');
   if(tab){view=tab.getAttribute('data-view');editingId=null;adding=addingStock=addingSub=false;subEditId=null;hoverIdx=null;render();return}
   const period=e.target.closest('[data-act="period"]');
@@ -884,7 +1179,7 @@ document.addEventListener('click',e=>{
 /* standalone preview: opened as a raw file with no dashboard bridge? back it
    with localStorage so it still renders. In the real sealed dashboard the
    bridge is injected first, so this branch never runs there. */
-if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:finance',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:finance')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);},stock:function(){return Promise.reject(new Error('no_key'));}};}
+if(!window.Vitality){window.Vitality={save:function(d){try{localStorage.setItem('v:prev:finance',JSON.stringify(d));}catch(e){}return Promise.resolve(true);},load:function(){try{return Promise.resolve(JSON.parse(localStorage.getItem('v:prev:finance')||'{}'));}catch(e){return Promise.resolve({});}},read:function(){return Promise.resolve(null);},stock:function(){return Promise.reject(new Error('no_key'));},ai:function(){return Promise.reject(new Error('no_key'));},aiKey:function(){return Promise.resolve(true);},aiStatus:function(){return Promise.resolve(null);}};}
 (async()=>{
   const d=await window.Vitality.load();
   store=(d&&typeof d==='object'&&!Array.isArray(d))?d:{};
