@@ -31,7 +31,14 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
-  body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);display:flex;justify-content:center;padding:40px 20px calc(96px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased;position:relative}
+  body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--font);display:flex;justify-content:center;padding:40px 20px calc(150px + env(safe-area-inset-bottom));-webkit-font-smoothing:antialiased;position:relative}
+  /* native scrollbar hidden — scrolling (wheel/touch/keyboard) still works fully,
+     this only removes the OS scrollbar track so it doesn't sit as a white bar
+     over the tile's own dark chrome */
+  html{scrollbar-width:none;-ms-overflow-style:none}
+  html::-webkit-scrollbar{display:none;width:0;height:0}
+  body{scrollbar-width:none;-ms-overflow-style:none}
+  body::-webkit-scrollbar{display:none;width:0;height:0}
   body::before{content:'';position:fixed;inset:0;z-index:-2;pointer-events:none;background:
     radial-gradient(58% 44% at 50% -6%, rgba(110,231,183,.13), transparent 62%),
     radial-gradient(1.5px 1.5px at 14% 16%, rgba(255,255,255,.5), transparent 100%),
@@ -63,7 +70,7 @@
   .row .nmwrap{min-width:0}
   .row .nm{font-size:14px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .row .hsub{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--muted);margin-top:1px}
-  .row .bal{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--muted-strong);padding:3px 7px;border-radius:6px;transition:background .12s,color .12s}
+  .row .bal{font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--muted-strong);padding:3px 7px;border-radius:6px;transition:background .12s,color .12s;text-shadow:0 0 10px rgba(110,231,183,.16)}
   .row .bal:hover{background:rgba(110,231,183,.09);color:var(--brand)}
   .row .bal.neg{color:var(--neg)}
   .row .del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;opacity:.45;padding:2px 4px;transition:opacity .12s,color .12s}
@@ -132,7 +139,7 @@
   .donutSvg path{transition:opacity .12s;cursor:pointer}
   .donutSvg path:hover{opacity:.8}
   .donutCenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
-  .donutNum{font-family:var(--mono);font-size:13px;color:var(--fg)}
+  .donutNum{font-family:var(--mono);font-size:13px;color:var(--fg);text-shadow:0 0 14px rgba(110,231,183,.3)}
   .donutSub{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
   .donutLegend{margin-top:14px;display:flex;flex-direction:column;gap:7px}
   .donutLeg{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted-strong)}
@@ -146,12 +153,12 @@
   .accountCard{border:1px solid var(--border);border-radius:16px;background:rgba(14,14,17,.5);padding:14px}
   .accountHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .accountLabel{font-size:13px;font-weight:600}
-  .accountTotal{font-family:var(--mono);font-size:12px;color:var(--muted-strong)}
+  .accountTotal{font-family:var(--mono);font-size:12px;color:var(--muted-strong);text-shadow:0 0 8px rgba(110,231,183,.14)}
   .accountTotalPct{color:var(--muted);margin-left:3px}
   .accountList{display:flex;flex-direction:column;gap:6px}
   .accountRow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:8px 4px}
   .accountRowName{font-size:13px;cursor:pointer}
-  .accountRowAmount{font-family:var(--mono);font-size:13px;color:var(--muted-strong);cursor:pointer;padding:2px 6px;border-radius:6px}
+  .accountRowAmount{font-family:var(--mono);font-size:13px;color:var(--muted-strong);cursor:pointer;padding:2px 6px;border-radius:6px;text-shadow:0 0 10px rgba(110,231,183,.16)}
   .accountRowAmount:hover{background:rgba(110,231,183,.09);color:var(--brand)}
   .inlineEditInput{width:100%;background:rgba(0,0,0,.45);border:1px solid var(--brand);border-radius:6px;padding:4px 7px;color:var(--fg);font-family:var(--mono);font-size:13px;outline:none}
   .inlineEditAmt{text-align:right}
@@ -173,8 +180,8 @@
   .activityName{font-size:12.5px}
   .activityMeta{font-family:var(--mono);font-size:9.5px;color:var(--muted)}
   .activityAmt{font-family:var(--mono);font-size:12px}
-  .activityAmt.up{color:var(--brand)}
-  .activityAmt.down{color:var(--neg)}
+  .activityAmt.up{color:var(--brand);text-shadow:0 0 10px rgba(110,231,183,.35)}
+  .activityAmt.down{color:var(--neg);text-shadow:0 0 10px rgba(255,139,139,.3)}
   .activityDate{font-family:var(--mono);font-size:9.5px;color:var(--muted)}
 
   /* ---- subs / orders / wishlist ---- */
@@ -189,7 +196,7 @@
   .emptyBody{font-size:12px;color:var(--muted);max-width:360px;margin:0 auto}
   .subsHero,.wishHero{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
   .nwHeroLabel{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .subsHeroNum,.wishHeroNum{font-family:var(--serif);font-style:italic;font-size:34px;color:#fff;margin-top:4px}
+  .subsHeroNum,.wishHeroNum{font-family:var(--serif);font-style:italic;font-size:34px;color:#fff;margin-top:4px;text-shadow:0 0 30px rgba(110,231,183,.22)}
   .subsHeroNumSuffix{font-size:.4em;font-style:normal;color:var(--muted);margin-left:3px}
   .subsHeroSub{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:2px}
   .sectionCount{color:var(--muted);font-weight:400}
@@ -208,7 +215,7 @@
   .subToggleDot{width:6px;height:6px;border-radius:50%;background:var(--muted)}
   .subToggle.on .subToggleDot{background:var(--brand)}
   .subRowCost{text-align:right}
-  .subRowCostBig{font-family:var(--mono);font-size:15px;color:var(--fg)}
+  .subRowCostBig{font-family:var(--mono);font-size:15px;color:var(--fg);text-shadow:0 0 10px rgba(110,231,183,.2)}
   .subRowCostUnit{font-family:var(--mono);font-size:9px;color:var(--muted)}
   .subRowCostBilled{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
   .subRowActions{display:flex;gap:4px}
@@ -226,7 +233,7 @@
   .ordCard.deducted{opacity:.6}
   .ordHead{display:flex;align-items:center;gap:8px}
   .ordName{flex:1;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ordAmt{font-family:var(--mono);font-size:14px}
+  .ordAmt{font-family:var(--mono);font-size:14px;text-shadow:0 0 10px rgba(110,231,183,.2)}
   .ordMetaRow{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
   .ordPill{font-family:var(--mono);font-size:9px;color:var(--muted);border:1px solid var(--border);border-radius:999px;padding:2px 8px}
   .ordPill.good{color:var(--brand);border-color:rgba(110,231,183,.35)}
@@ -253,7 +260,7 @@
   .wishRowName{font-size:13.5px}
   .wishRowMeta{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px}
   .wishRowAmtWrap{margin-left:auto;text-align:right}
-  .wishRowAmt{font-family:var(--mono);font-size:14px}
+  .wishRowAmt{font-family:var(--mono);font-size:14px;text-shadow:0 0 10px rgba(110,231,183,.2)}
   .wishRowPct{font-family:var(--mono);font-size:9.5px;color:var(--muted);margin-top:2px}
   .wishRowPct.warn{color:#e8c878}
   .wishRowPct.bad{color:var(--neg)}
